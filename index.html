@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>青年先锋网 | 韩沐烨思想指导</title>
-    <!-- 这里添加了浏览器标签页图标 (Favicon) -->
     <link rel="icon" href="https://i.postimg.cc/wvy7YZX0/stevehanlogored.png" type="image/png">
     <link rel="shortcut icon" href="https://i.postimg.cc/wvy7YZX0/stevehanlogored.png" type="image/png">
 
@@ -383,11 +382,82 @@
             font-weight: 700;
             font-size: 15px;
         }
+
+        /* =========================================== */
+        /* MOBILE RESPONSIVE FIXES (ADDED FOR YOU)     */
+        /* =========================================== */
+        @media screen and (max-width: 768px) {
+            /* 1. Fit container to screen width */
+            .container {
+                width: 100%;
+                padding: 0 15px;
+            }
+
+            /* 2. Adjust Header/Logo to stack and size down */
+            .logo-area {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .logo-text {
+                font-size: 40px; /* Smaller font for phone */
+            }
+            .logo-sub {
+                border-left: none;
+                padding-left: 0;
+                font-size: 15px;
+            }
+
+            /* 3. Nav Bar: Scroll horizontally instead of breaking */
+            .nav-bar .container {
+                overflow-x: auto;
+                justify-content: flex-start;
+            }
+            .nav-list {
+                width: max-content;
+            }
+            #language-toggle {
+                margin-left: 15px;
+                white-space: nowrap;
+            }
+
+            /* 4. REORDERING THE CONTENT (The main request) */
+            .main-content {
+                display: flex;
+                flex-direction: column;
+            }
+            
+            /* Order 1: The Right Column (Tabs & Quotes) goes FIRST */
+            .right-column {
+                order: 1;
+                margin-bottom: 30px;
+                border-bottom: 5px solid #eee; /* Visual separator */
+                padding-bottom: 20px;
+            }
+
+            /* Order 2: The Middle Column (Main Headline/News) goes SECOND */
+            .middle-column {
+                order: 2;
+            }
+
+            /* 5. Fix the split view inside the Middle Column */
+            /* This forces the [Image] and [Latest Reports] to stack vertically */
+            .middle-column > div[style*="grid-template-columns"] {
+                grid-template-columns: 1fr !important;
+                display: flex !important;
+                flex-direction: column;
+                gap: 20px !important;
+            }
+            
+            /* Fix marquee gap for mobile */
+            .marquee-item {
+                margin-right: 50px;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Header Area -->
     <div class="container">
         <div class="header">
             <div class="logo-area">
@@ -400,7 +470,6 @@
         </div>
     </div>
 
-    <!-- Nav Bar with Integrated Language Toggle -->
     <div class="nav-bar">
         <div class="container">
             <ul class="nav-list" id="nav-list">
@@ -412,12 +481,10 @@
                 <li class="nav-item"><a href="#" class="translatable-link" data-key="nav_contact">联系我们</a></li>
             </ul>
             
-            <!-- Language Toggle Button -->
             <button id="language-toggle">English</button>
         </div>
     </div>
 
-    <!-- Marquee -->
     <div class="marquee-container">
         <div class="marquee-content" id="marquee-text-container">
             <span class="marquee-item">★ <span class="translatable" data-key="marquee1">PROPAGANDA 1</span></span> 
@@ -436,29 +503,23 @@
     </div>
 
     <div class="container">
-        <!-- Main Content Grid -->
         <div class="main-content">
             
-            <!-- Middle Column -->
             <div class="middle-column">
                 
-                <!-- Core Directive -->
                 <div class="section-header" id="section-header-1">
                     韩沐烨重要指示
                     <span style="font-size: 12px; color: #999; font-weight: normal;" class="translatable" data-key="enter_topic">进入专题 >></span>
                 </div>
 
-                <!-- Headline -->
                 <a href="#" class="main-headline" id="main-headline-link">
                     韩沐烨同志在<strong>青年团组织建设与学术目标</strong>大会上的重要讲话精神
                 </a>
                 
-                <!-- UPDATED: Color fixed to #333 to match other text -->
                 <p style="font-size: 15px; color: #333; margin-bottom: 20px;" id="headline-summary">
                     韩沐烨同志强调，青年团组织要以<strong>自律和协作</strong>为本，推动<strong>集体学习</strong>与<strong>先锋模范</strong>的和谐统一，实现<strong>学业高质量发展</strong>。
                 </p>
 
-                <!-- Focus Image Area -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; align-items: start;">
                     
                     <div style="height: 300px; background: #eee; border: 1px solid #ddd; overflow: hidden; position: relative;">
@@ -476,7 +537,6 @@
                             <li><a href="#"><span class="translatable" data-key="news3">韩沐烨同志关于<strong>青年人才培养</strong>的战略部署全面落实</span></a></li>
                         </ul>
 
-                        <!-- Theory Links -->
                         <div class="theory-links">
                             <div class="section-header" style="font-size: 14px; margin-bottom: 5px; border-left: 3px solid var(--cpc-gold);" id="section-header-theory">
                                 重要理论链接
@@ -489,7 +549,6 @@
                     </div>
                 </div>
                 
-                <!-- Depth Observation -->
                 <div class="section-header" style="font-size: 16px;" id="section-header-depth">
                     校园深度观察
                 </div>
@@ -500,7 +559,6 @@
                     <strong>学风建设永远在路上：</strong> 面对日益激烈的学术竞争，青年团组织强调要摒弃浮躁心态，扎实打好基础。韩沐烨同志多次在不同场合强调，“分数不是唯一的标准，但态度决定一切”。这一论述为塞中及AP/IB学子指明了奋斗方向，即在追求卓越的同时，更要注重品格的锤炼。
                 </div>
 
-                <!-- Academic Vanguards -->
                 <div class="section-header" style="font-size: 16px;" id="section-header-4">
                     学科学术先锋
                 </div>
@@ -512,7 +570,6 @@
                     <li><a href="#"><span class="translatable" data-key="news8">学生代表文章：全面贯彻落实<strong>韩沐烨思想</strong></span></a></li>
                 </ul>
                 
-                <!-- Discipline -->
                 <div class="section-header" style="font-size: 16px;" id="section-header-6">
                     纪律与作风建设
                     <span style="font-size: 12px; color: #999; font-weight: normal;" class="translatable" data-key="discipline_more">更多纪律通报 >></span>
@@ -525,7 +582,6 @@
                     <li><a href="#"><span class="discipline-notice translatable" data-key="disc5">全面落实《青年学术诚信条例》，开展作业与考试纪律专项检查</span></a></li>
                 </ul>
 
-                <!-- Activities -->
                 <div class="section-header" style="font-size: 16px;" id="section-header-5">
                     集体活动风采
                     <span style="font-size: 12px; color: #999; font-weight: normal;" class="translatable" data-key="more_activities">更多 >></span>
@@ -541,10 +597,8 @@
 
             </div>
 
-            <!-- Right Column: Tab Widget & Quote -->
             <div class="right-column">
                 
-                <!-- Tabbed Widget -->
                 <div class="tab-widget">
                     <div class="tab-headers">
                         <div class="tab-header active" data-tab="tab1" id="tab-header-1">理论学习</div>
@@ -572,22 +626,18 @@
                     </div>
                 </div>
 
-                <!-- Daily Quote -->
                 <div class="quote-box">
                     <div style="font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase;" id="quote-header">每日学习：</div>
                     <div class="quote-text" id="daily-quote">
                         "没有汗水的青春，是毫无意义的。<strong>学习就是我们的战场</strong>。"
                     </div>
                     <div class="quote-signature" id="quote-signature">
-                        <!-- Dynamic Signature -->
-                    </div>
-                    <!-- REMOVED onclick="newQuote()" to fix ReferenceError -->
+                        </div>
                     <button class="quote-btn" id="quote-button">下一条教导</button>
                 </div>
             </div>
         </div>
 
-        <!-- Banner -->
         <div class="banner-strip" id="banner-strip">
             高举韩沐烨思想伟大旗帜，奋力开创美好未来！
         </div>
@@ -672,7 +722,7 @@
                 },
                 'marquee11': { 
                     zh: '[2026年2月20日 喜讯] 数学社成员在AMC12竞赛中包揽全省前十名，社长李明更以满分成绩刷新历史记录！这是韩沐烨“极限施压、追求卓越”训练法的伟大胜利！', 
-                    en: '[February 20, 2026 - Good News] Members of the Math Club swept the top ten places in the province in the AMC12 competition, with President Li Ming setting a new historical record with a perfect score! This is a great victory for Steve Han\'s training method of "Extreme Pressure and Pursuit of Excellence"!' 
+                    en: '[February 20, 2026 - Good News] Members of the Math Club swept the top ten places in the province in the AMC12 competition, with President Li Ming setting a new historical record with a perfect score! This is the crystallization of collective wisdom and the supreme glory of Semiahmoo youth!' 
                 },
                 'marquee12': { 
                     zh: '[2026年3月1日] 青春只有一次，是选择在平庸中沉沦，还是在奋斗中燃烧？韩沐烨同志号召我们：用汗水浇灌梦想，用成绩捍卫尊严，做新时代的真英雄！', 
