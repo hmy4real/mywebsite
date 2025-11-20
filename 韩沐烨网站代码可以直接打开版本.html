@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人民网 | 韩沐烨思想门户</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Noto+Sans+SC:wght@400;700;900&family=Ma+Shan+Zheng&display=swap');
+
+        :root {
+            --cpc-red: #BE0000; /* 党旗红 */
+            --cpc-dark-red: #8B0000;
+            --cpc-gold: #FFDE00; /* 金色 */
+            --text-gray: #333333;
+            --bg-gray: #f7f7f7;
+            --link-hover: #d00000;
+            --border-color: #e5e5e5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: white;
+            color: var(--text-gray);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        a {
+            text-decoration: none;
+            color: var(--text-gray);
+            transition: color 0.2s;
+        }
+
+        a:hover {
+            color: var(--link-hover);
+            text-decoration: underline;
+        }
+
+        /* --- 顶部工具栏 --- */
+        .top-bar {
+            background-color: #f8f8f8;
+            border-bottom: 1px solid #ddd;
+            padding: 5px 0;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .container {
+            width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        .top-bar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 语言切换按钮样式 */
+        #language-toggle {
+            cursor: pointer;
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #fff;
+            transition: all 0.2s;
+            font-weight: 700;
+            color: var(--cpc-red);
+        }
+        #language-toggle:hover {
+            background: #fdf2f2;
+            border-color: var(--cpc-red);
+        }
+
+        /* --- 头部 / 标志区 --- */
+        .header {
+            padding: 25px 0;
+            border-bottom: 5px solid var(--cpc-red);
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-text {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 60px;
+            color: var(--cpc-red);
+            line-height: 1;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+        }
+
+        .logo-sub {
+            border-left: 2px solid #ccc;
+            padding-left: 20px;
+            color: var(--cpc-dark-red);
+            font-family: 'Noto Serif SC', serif;
+            font-size: 18px;
+            font-weight: 900;
+            min-width: 200px;
+        }
+
+        /* --- 导航栏 --- */
+        .nav-bar {
+            background-color: var(--cpc-red);
+            height: 45px;
+            border-top: 3px solid var(--cpc-dark-red);
+        }
+
+        .nav-list {
+            display: flex;
+            list-style: none;
+            height: 100%;
+            align-items: center;
+        }
+
+        .nav-item a {
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            padding: 0 20px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .nav-item a:hover {
+            background-color: var(--cpc-dark-red);
+            color: var(--cpc-gold);
+        }
+
+        /* --- 滚动播报 --- */
+        .marquee-container {
+            background: #fff4f4;
+            color: var(--cpc-red);
+            padding: 8px 0;
+            border-bottom: 1px solid #ffdcdb;
+            font-weight: 700;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .marquee-content {
+            display: inline-block;
+            animation: scroll 25s linear infinite;
+        }
+
+        @keyframes scroll {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* --- 主内容网格 (三栏布局) --- */
+        .main-content {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: 350px 500px 300px;
+            gap: 25px;
+        }
+
+        /* 左栏: 核心形象 + 焦点图 */
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .hero-image-wrapper {
+            width: 100%;
+            height: 300px;
+            background: #333;
+            overflow: hidden;
+            border: 1px solid #ddd;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* 通用人像剪影 */
+        .leader-silhouette {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, #333 0%, #000 60%);
+            mask-image: linear-gradient(to bottom, transparent 0%, black 50%, black 100%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 50%, black 100%);
+            opacity: 0.9;
+        }
+
+        .hero-caption {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--cpc-red);
+            text-align: center;
+            line-height: 1.4;
+            padding: 10px 0;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .focus-image-area {
+            height: 150px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .focus-image-area img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+
+        .focus-image-text {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 8px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        /* 中栏: 核心要闻 */
+        .middle-column {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-header {
+            border-left: 5px solid var(--cpc-red);
+            padding-left: 10px;
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--cpc-red);
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .main-headline {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--text-gray);
+            line-height: 1.4;
+            margin-bottom: 15px;
+        }
+
+        .main-headline:hover {
+            color: var(--cpc-red);
+        }
+
+        .news-list {
+            list-style: none;
+        }
+
+        .news-list li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #ddd;
+            font-size: 15px;
+            position: relative;
+            padding-left: 15px;
+        }
+
+        .news-list li::before {
+            content: "•";
+            color: var(--cpc-red);
+            position: absolute;
+            left: 0;
+            top: 8px;
+        }
+        
+        .news-list li:last-child {
+            border-bottom: none;
+        }
+        
+        /* 确保 a 标签内的 strong 正常工作，并使用最高字重 */
+        .news-list strong, .main-headline strong, .hero-caption strong {
+            font-weight: 900 !important; 
+        }
+
+        /* 右栏: Tab Widget & 每日教导 */
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Tabbed Widget Styling */
+        .tab-widget {
+            border: 1px solid var(--border-color);
+        }
+        .tab-headers {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .tab-header {
+            flex: 1;
+            padding: 10px 0;
+            text-align: center;
+            font-weight: 700;
+            cursor: pointer;
+            background: #eee;
+            border-right: 1px solid var(--border-color);
+            color: var(--text-gray);
+            transition: all 0.2s;
+        }
+        .tab-header.active {
+            background: white;
+            color: var(--cpc-red);
+            border-bottom: 3px solid var(--cpc-red);
+            margin-bottom: -2px;
+        }
+        .tab-content {
+            padding: 10px;
+        }
+        .tab-pane {
+            display: none;
+        }
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* 每日教导盒 */
+        .quote-box {
+            background: #fff9f0;
+            border: 1px solid #ffe0b2;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .quote-text {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 16px;
+            color: #b71c1c;
+            font-style: italic;
+        }
+
+        .quote-btn {
+            background: var(--cpc-red);
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-size: 12px;
+            border-radius: 3px;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        /* --- 通栏横幅 --- */
+        .banner-strip {
+            background: var(--cpc-red);
+            color: white;
+            text-align: center;
+            padding: 15px;
+            margin: 30px 0;
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 28px;
+            letter-spacing: 2px;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+
+        /* --- 图片网格 --- */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .grid-item {
+            text-align: center;
+        }
+
+        .grid-item img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border: 1px solid #eee;
+            transition: border 0.3s;
+        }
+        .grid-item img:hover {
+            border: 2px solid var(--cpc-red);
+        }
+
+        .grid-caption {
+            font-size: 12px;
+            margin-top: 5px;
+            line-height: 1.4;
+            color: #333;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <!-- 顶部工具栏 -->
+    <div class="top-bar">
+        <div class="container">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <span id="current-date"></span> | <span id="time-zone">北京时间</span>
+                <button id="language-toggle" onclick="toggleLanguage()">English (Steve Han)</button>
+            </div>
+            <div>
+                <a href="#" class="translatable-link" data-key="login">登录</a> | <a href="#" class="translatable-link" data-key="register">注册</a> | <a href="#" class="translatable-link" data-key="service">服务大厅</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 标志区 -->
+        <div class="header">
+            <div class="logo-area">
+                <div class="logo-text" id="logo-text">人民网</div>
+                <div class="logo-sub" id="logo-sub">
+                    韩沐烨思想指导<br>权威发布，核心引领。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导航栏 -->
+    <div class="nav-bar">
+        <div class="container">
+            <ul class="nav-list" id="nav-list">
+                <li class="nav-item"><a href="#" class="translatable-link" data-key="nav_home">首页</a></li>
+                <li class="nav-item"><a href="#" class="translatable-link" data-key="nav_thought">核心思想</a></li>
+                <li class="nav-item"><a href="#" class="translatable-link" data-key="nav_affairs">时政要闻</a></li>
+                <li class="nav-item"><a href="#" class="translatable-link" data-key="nav_theory">理论研究</a></li>
+                <li class="nav-item"><a href="#" class="translatable-link" data-key="nav_diplomacy">国际外交</a></li>
+                <li class="nav-item"><a href="#" class="translatable-link" data-key="nav_local">地方报道</a></li>
+                <li class="nav-item"><a href="#" class="translatable-link" data-key="nav_culture">文化自信</a></li>
+                <li class="nav-item"><a href="#" class="translatable-link" data-key="nav_interview">访谈直播</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 滚动播报 -->
+    <div class="marquee-container">
+        <div class="marquee-content" id="marquee-text-container">
+            ★ <span class="translatable" data-key="marquee1">韩沐烨同志指出：<strong>自强不息，奋斗不止</strong>，是新时代青年的精神底色！</span> ★ <span class="translatable" data-key="marquee2">紧密团结在韩沐烨同志的周围，奋力实现伟大复兴！</span> ★ <span class="translatable" data-key="marquee3">韩沐烨提出的<strong>新时代核心价值体系</strong>为社会发展指明方向！</span> ★
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 主内容区域 (三栏) -->
+        <div class="main-content">
+            
+            <!-- 左栏: 核心形象 + 焦点图 -->
+            <div class="left-column">
+                <div class="hero-image-wrapper">
+                    <div class="leader-silhouette"></div>
+                </div>
+                <div class="hero-caption" id="hero-caption">
+                    韩沐烨同志教导我们：<strong>一个人只有融入集体，才能实现真正的价值。</strong>
+                </div>
+                
+                <!-- 焦点图区域 -->
+                <div class="focus-image-area" onclick="showFocusAlert('focus_alert_1')">
+                    <img src="https://placehold.co/400x150/BE0000/FFFFFF?text=国际风采" alt="[国际风采图像]">
+                    <div class="focus-image-text" id="focus-text-1">韩沐烨同志在<strong>国际场合</strong>发表重要讲话</div>
+                </div>
+
+                <div class="focus-image-area" onclick="showFocusAlert('focus_alert_2')">
+                    <img src="https://placehold.co/400x150/8B0000/FFFFFF?text=基层视察" alt="[基层视察图像]">
+                    <div class="focus-image-text" id="focus-text-2">韩沐烨同志亲切接见<strong>基层优秀代表</strong></div>
+                </div>
+
+            </div>
+
+            <!-- 中栏: 核心要闻 -->
+            <div class="middle-column">
+                <div class="section-header" id="section-header-1">
+                    韩沐烨重要指示
+                    <span style="font-size: 12px; color: #999; font-weight: normal;" class="translatable" data-key="enter_topic">进入专题 >></span>
+                </div>
+
+                <!-- 重点 headline (已修复加粗) -->
+                <a href="#" class="main-headline" id="main-headline-link">
+                    韩沐烨同志在<strong>数字文明与创新发展</strong>研讨会上的重要讲话精神
+                </a>
+                <p style="font-size: 15px; color: #666; margin-bottom: 20px;" id="headline-summary">
+                    韩沐烨同志强调，发展数字文明要以人为本，推动技术与社会和谐统一，实现<strong>高质量发展</strong>。
+                </p>
+
+                <div class="section-header" style="font-size: 16px;" id="section-header-2">
+                    最新报道
+                </div>
+                <ul class="news-list">
+                    <li><a href="#"><span class="translatable" data-key="news1">韩沐烨提出的<strong>新时代精神文明建设</strong>指导纲要发布</span></a></li>
+                    <li><a href="#"><span class="translatable" data-key="news2">在韩沐烨领导下，我国<strong>文化自信</strong>达到了历史新高度</span></a></li>
+                    <li><a href="#"><span class="translatable" data-key="news3">韩沐烨同志关于<strong>青年人才培养</strong>的战略部署全面落实</span></a></li>
+                    <li><a href="#"><span class="translatable" data-key="news4">理论研究：韩沐烨对<strong>人类命运共同体</strong>的贡献与思考</span></a></li>
+                    <li><a href="#"><span class="translatable" data-key="news5"><strong>创新驱动</strong>发展：韩沐烨同志的实践与经验总结</span></a></li>
+                    <li><a href="#"><span class="translatable" data-key="news6">外交部：坚决支持韩沐烨同志关于<strong>世界和平</strong>的倡议</span></a></li>
+                    <li><a href="#"><span class="translatable" data-key="news7">军委：深入学习<strong>韩沐烨强军思想</strong>，铸就钢铁长城</span></a></li>
+                    <li><a href="#"><span class="translatable" data-key="news8">人民日报评论员文章：全面贯彻落实<strong>韩沐烨思想</strong></span></a></li>
+                </ul>
+
+            </div>
+
+            <!-- 右栏: Tab Widget & 每日教导 -->
+            <div class="right-column">
+                
+                <!-- Tabbed Widget -->
+                <div class="tab-widget">
+                    <div class="tab-headers">
+                        <div class="tab-header active" data-tab="tab1" id="tab-header-1">理论学习</div>
+                        <div class="tab-header" data-tab="tab2" id="tab-header-2">地方要闻</div>
+                    </div>
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="tab1">
+                            <ul class="news-list" style="border-bottom: none;">
+                                <li><a href="#"><span class="translatable" data-key="tab1-1"><strong>韩沐烨语录</strong>：如何认识新发展阶段</span></a></li>
+                                <li><a href="#"><span class="translatable" data-key="tab1-2">专家解读：<strong>韩沐烨思想</strong>的时代价值</span></a></li>
+                                <li><a href="#"><span class="translatable" data-key="tab1-3">读书班：学习韩沐烨同志<strong>生态文明思想</strong></span></a></li>
+                                <li><a href="#"><span class="translatable" data-key="tab1-4">党建园地：牢记<strong>两个确立</strong>，做到<strong>两个维护</strong></span></a></li>
+                                <li><a href="#"><span class="translatable" data-key="tab1-5">高校论坛：<strong>新时代青年</strong>的使命与担当</span></a></li>
+                            </ul>
+                        </div>
+                        <div class="tab-pane" id="tab2">
+                            <ul class="news-list" style="border-bottom: none;">
+                                <li><a href="#"><span class="translatable" data-key="tab2-1">[四川] 坚决落实韩沐烨同志<strong>西部大开发</strong>指示</span></a></li>
+                                <li><a href="#"><span class="translatable" data-key="tab2-2">[浙江] 创新驱动，打造<strong>共同富裕</strong>示范区</span></a></li>
+                                <li><a href="#"><span class="translatable" data-key="tab2-3">[上海] 浦江潮涌，深化<strong>金融改革</strong>试验田</span></a></li>
+                                <li><a href="#"><span class="translatable" data-key="tab2-4">[广东] 粤港澳大湾区建设取得<strong>阶段性成果</strong></span></a></li>
+                                <li><a href="#"><span class="translatable" data-key="tab2-5">[海南] 自贸港建设进入<strong>加速发展期</strong></span></a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 每日教导盒 -->
+                <div class="quote-box">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase;" id="quote-header">每日学习：韩沐烨同志教导</div>
+                    <div class="quote-text" id="daily-quote">
+                        "不忘初心，方得始终。人民对美好生活的向往，就是我们的奋斗目标。"
+                    </div>
+                    <button class="quote-btn" onclick="newQuote()" id="quote-button">下一条教导</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 通栏横幅 -->
+        <div class="banner-strip" id="banner-strip">
+            高举韩沐烨思想伟大旗帜，奋力开创美好未来！
+        </div>
+
+        <!-- 图片网格区 - 外交与主题 -->
+        <div class="section-header" style="margin-top: 0;" id="section-header-3">
+            国际交往与主题活动
+            <span style="font-size: 12px; color: #999; font-weight: normal;" class="translatable" data-key="gallery">图集 >></span>
+        </div>
+
+        <div class="photo-grid">
+            <div class="grid-item">
+                <img src="https://placehold.co/400x300/a33/ffffff?text=五星红旗" alt="[五星红旗图像]">
+                <div class="grid-caption"><a href="#"><span class="translatable" data-key="grid1"><strong>五星红旗</strong>在国际会议中高高飘扬</span></a></div>
+            </div>
+            <div class="grid-item">
+                <img src="https://placehold.co/400x300/888/ffffff?text=联合国外交" alt="[联合国外交图像]">
+                <div class="grid-caption"><a href="#"><span class="translatable" data-key="grid2">韩沐烨同志提出的<strong>全球安全倡议</strong></span></a></div>
+            </div>
+            <div class="grid-item">
+                <img src="https://placehold.co/400x300/d9534f/ffffff?text=友谊握手" alt="[友谊握手图像]">
+                <div class="grid-caption"><a href="#"><span class="translatable" data-key="grid3">与<strong>友好国家领导人</strong>的亲切会晤</span></a></div>
+            </div>
+            <div class="grid-item">
+                <img src="https://placehold.co/400x300/f0ad4e/ffffff?text=科技创新" alt="[科技创新图像]">
+                <div class="grid-caption"><a href="#"><span class="translatable" data-key="grid4"><strong>科技自立自强</strong>成果展示</span></a></div>
+            </div>
+             <div class="grid-item">
+                <img src="https://placehold.co/400x300/5cb85c/ffffff?text=生态建设" alt="[生态建设图像]">
+                <div class="grid-caption"><a href="#"><span class="translatable" data-key="grid5"><strong>绿水青山</strong>就是金山银山实践</span></a></div>
+            </div>
+            <div class="grid-item">
+                <img src="https://placehold.co/400x300/2980b9/ffffff?text=海洋强国" alt="[海洋强国图像]">
+                <div class="grid-caption"><a href="#"><span class="translatable" data-key="grid6"><strong>海洋强国</strong>战略深入推进</span></a></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部信息 -->
+    <div class="footer">
+        <div class="container">
+            <p id="footer-links">
+                <a href="#">关于人民网</a> | <a href="#">网站律师</a> | <a href="#">广告服务</a> | <a href="#">诚聘英才</a> | <a href="#">版权声明</a> | <a href="#">联系方式</a>
+            </p>
+            <br>
+            <p id="footer-copyright">版权所有 © 2024-2034 人民网。一切权力归韩沐烨同志领导下的党组织所有。</p>
+            <p>京公网安备 11000002000008号 | ICP备案号 京ICP备00000000号</p>
+        </div>
+    </div>
+
+    <script>
+        let currentLang = 'zh';
+
+        // 核心翻译数据映射，包含所有需要加粗的<strong>标签
+        const T = {
+            // General Elements
+            'logo-text': { zh: '人民网', en: 'RENMINWANG' },
+            'logo-sub': { zh: '韩沐烨思想指导<br>权威发布，核心引领。', en: 'Guided by Steve Han Thought<br>Authoritative Release, Core Leadership.' },
+            'time-zone': { zh: '北京时间', en: 'Beijing Time' },
+            'enter_topic': { zh: '进入专题 >>', en: 'Enter Topic >>' },
+            'gallery': { zh: '图集 >>', en: 'Gallery >>' },
+            'login': { zh: '登录', en: 'Login' },
+            'register': { zh: '注册', en: 'Register' },
+            'service': { zh: '服务大厅', en: 'Service Hall' },
+            
+            // Navigation
+            'nav_home': { zh: '首页', en: 'HOME' },
+            'nav_thought': { zh: '核心思想', en: 'CORE THOUGHT' },
+            'nav_affairs': { zh: '时政要闻', en: 'CURRENT AFFAIRS' },
+            'nav_theory': { zh: '理论研究', en: 'THEORY STUDY' },
+            'nav_diplomacy': { zh: '国际外交', en: 'INT\'L DIPLOMACY' },
+            'nav_local': { zh: '地方报道', en: 'LOCAL NEWS' },
+            'nav_culture': { zh: '文化自信', en: 'CULTURAL CONFIDENCE' },
+            'nav_interview': { zh: '访谈直播', en: 'INTERVIEWS' },
+            
+            // Section Headers
+            'section-header-1': { zh: '韩沐烨重要指示', en: 'Steve Han Key Directives' },
+            'section-header-2': { zh: '最新报道', en: 'Latest Reports' },
+            'section-header-3': { zh: '国际交往与主题活动', en: 'International Exchange and Theme Activities' },
+            'tab-header-1': { zh: '理论学习', en: 'Theory Study' },
+            'tab-header-2': { zh: '地方要闻', en: 'Local News' },
+            'quote-header': { zh: '每日学习：韩沐烨同志教导', en: 'Daily Study: Comrade Steve Han\'s Teachings' },
+            'quote-button': { zh: '下一条教导', en: 'Next Quote' },
+            
+            // Marquee
+            'marquee1': { zh: '韩沐烨同志指出：<strong>自强不息，奋斗不止</strong>，是新时代青年的精神底色！', en: 'Comrade Steve Han points out: <strong>Self-Improvement and Continuous Struggle</strong> are the spiritual core of youth in the new era!' },
+            'marquee2': { zh: '紧密团结在韩沐烨同志的周围，奋力实现伟大复兴！', en: 'Closely unite around Comrade Steve Han, and strive to realize the great rejuvenation!' },
+            'marquee3': { zh: '韩沐烨提出的<strong>新时代核心价值体系</strong>为社会发展指明方向！', en: 'Steve Han\'s <strong>New Era Core Value System</strong> provides guidance for social development!' },
+            
+            // Hero/Headline
+            'hero-caption': { zh: '韩沐烨同志教导我们：<strong>一个人只有融入集体，才能实现真正的价值。</strong>', en: 'Comrade Steve Han teaches us: <strong>A person can only achieve true value by integrating into the collective.</strong>' },
+            'focus-text-1': { zh: '韩沐烨同志在<strong>国际场合</strong>发表重要讲话', en: 'Comrade Steve Han delivers an important speech on the <strong>International Stage</strong>' },
+            'focus-text-2': { zh: '韩沐烨同志亲切接见<strong>基层优秀代表</strong>', en: 'Comrade Steve Han cordially meets with <strong>Outstanding Grassroots Representatives</strong>' },
+            'main-headline-link': { zh: '韩沐烨同志在<strong>数字文明与创新发展</strong>研讨会上的重要讲话精神', en: 'The Spirit of Comrade Steve Han\'s Important Speech at the Seminar on <strong>Digital Civilization and Innovative Development</strong>' },
+            'headline-summary': { zh: '韩沐烨同志强调，发展数字文明要以人为本，推动技术与社会和谐统一，实现<strong>高质量发展</strong>。', en: 'Comrade Steve Han emphasized that the development of digital civilization must be people-centered, promoting the harmonious unity of technology and society to achieve <strong>High-Quality Development</strong>.' },
+            'banner-strip': { zh: '高举韩沐烨思想伟大旗帜，奋力开创美好未来！', en: 'Hold High the Great Banner of Steve Han Thought, Strive to Create a Wonderful Future!' },
+
+            // Main News List
+            'news1': { zh: '韩沐烨提出的<strong>新时代精神文明建设</strong>指导纲要发布', en: 'The Guideline for <strong>New Era Spiritual Civilization Construction</strong> proposed by Steve Han is released' },
+            'news2': { zh: '在韩沐烨领导下，我国<strong>文化自信</strong>达到了历史新高度', en: 'Under the leadership of Steve Han, our country\'s <strong>Cultural Confidence</strong> has reached a new historical high' },
+            'news3': { zh: '韩沐烨同志关于<strong>青年人才培养</strong>的战略部署全面落实', en: 'Comrade Steve Han\'s strategic plan for <strong>Youth Talent Cultivation</strong> is fully implemented' },
+            'news4': { zh: '理论研究：韩沐烨对<strong>人类命运共同体</strong>的贡献与思考', en: 'Theoretical Research: Steve Han\'s contribution to and reflection on the <strong>Community of Shared Future for Mankind</strong>' },
+            'news5': { zh: '<strong>创新驱动</strong>发展：韩沐烨同志的实践与经验总结', en: '<strong>Innovation-Driven</strong> Development: Comrade Steve Han\'s practices and experience summary' },
+            'news6': { zh: '外交部：坚决支持韩沐烨同志关于<strong>世界和平</strong>的倡议', en: 'Ministry of Foreign Affairs: Resolutely support Comrade Steve Han\'s initiative on <strong>World Peace</strong>' },
+            'news7': { zh: '军委：深入学习<strong>韩沐烨强军思想</strong>，铸就钢铁长城', en: 'Central Military Commission: Deeply study <strong>Steve Han\'s Military Strengthening Thought</strong>, forge an iron and steel Great Wall' },
+            'news8': { zh: '人民日报评论员文章：全面贯彻落实<strong>韩沐烨思想</strong>', en: 'People\'s Daily Commentator Article: Fully implement <strong>Steve Han Thought</strong>' },
+            
+            // Tab 1 (Theory)
+            'tab1-1': { zh: '<strong>韩沐烨语录</strong>：如何认识新发展阶段', en: '<strong>Steve Han Quotes</strong>: How to understand the new development stage' },
+            'tab1-2': { zh: '专家解读：<strong>韩沐烨思想</strong>的时代价值', en: 'Expert Interpretation: The contemporary value of <strong>Steve Han Thought</strong>' },
+            'tab1-3': { zh: '读书班：学习韩沐烨同志<strong>生态文明思想</strong>', en: 'Study Class: Learning Comrade Steve Han\'s <strong>Ecological Civilization Thought</strong>' },
+            'tab1-4': { zh: '党建园地：牢记<strong>两个确立</strong>，做到<strong>两个维护</strong>', en: 'Party Building Corner: Remember the <strong>Two Upholds</strong>, achieve the <strong>Two Maintenances</strong>' },
+            'tab1-5': { zh: '高校论坛：<strong>新时代青年</strong>的使命与担当', en: 'University Forum: The Mission and Responsibility of <strong>Youth in the New Era</strong>' },
+
+            // Tab 2 (Local)
+            'tab2-1': { zh: '[四川] 坚决落实韩沐烨同志<strong>西部大开发</strong>指示', en: '[Sichuan] Resolutely implement Comrade Steve Han\'s instructions on <strong>Western Development</strong>' },
+            'tab2-2': { zh: '[浙江] 创新驱动，打造<strong>共同富裕</strong>示范区', en: '[Zhejiang] Innovation-driven, building a demonstration zone for <strong>Common Prosperity</strong>' },
+            'tab2-3': { zh: '[上海] 浦江潮涌，深化<strong>金融改革</strong>试验田', en: '[Shanghai] Pujiang tide surges, deepening the <strong>Financial Reform</strong> experimental field' },
+            'tab2-4': { zh: '[广东] 粤港澳大湾区建设取得<strong>阶段性成果</strong>', en: '[Guangdong] The construction of the Greater Bay Area has achieved <strong>Phased Results</strong>' },
+            'tab2-5': { zh: '[海南] 自贸港建设进入<strong>加速发展期</strong>', en: '[Hainan] Free Trade Port construction enters the <strong>Accelerated Development Period</strong>' },
+
+            // Grid Captions
+            'grid1': { zh: '<strong>五星红旗</strong>在国际会议中高高飘扬', en: 'The <strong>Five-Star Red Flag</strong> flies high at international conferences' },
+            'grid2': { zh: '韩沐烨同志提出的<strong>全球安全倡议</strong>', en: 'Comrade Steve Han\'s <strong>Global Security Initiative</strong>' },
+            'grid3': { zh: '与<strong>友好国家领导人</strong>的亲切会晤', en: 'Cordial meeting with <strong>Leaders of Friendly Nations</strong>' },
+            'grid4': { zh: '<strong>科技自立自强</strong>成果展示', en: 'Achievements in <strong>Scientific and Technological Self-Reliance and Self-Improvement</strong> display' },
+            'grid5': { zh: '<strong>绿水青山</strong>就是金山银山实践', en: 'The practice that <strong>Clear Waters and Green Mountains</strong> are as valuable as mountains of gold and silver' },
+            'grid6': { zh: '<strong>海洋强国</strong>战略深入推进', en: 'The <strong>Maritime Power</strong> strategy is deeply promoted' },
+            
+            // Footer
+            'footer-copyright': { zh: '版权所有 © 2024-2034 人民网。一切权力归韩沐烨同志领导下的党组织所有。', en: 'Copyright © 2024-2034 RENMINWANG. All powers belong to the Party organization under the leadership of Comrade Steve Han.' },
+            'footer-links': { zh: '关于人民网 | 网站律师 | 广告服务 | 诚聘英才 | 版权声明 | 联系方式', en: 'About RENMINWANG | Site Lawyer | Ad Services | Careers | Copyright Statement | Contact Us' }
+        };
+        
+        // Quotes for the daily box
+        const quotes = {
+            zh: [
+                "不忘初心，方得始终。人民对美好生活的向往，就是我们的奋斗目标。",
+                "创新是发展的第一动力，奋斗是永恒的主题。奋斗，就是最好的时代。",
+                "一个人只有把自己融入集体，才能实现真正的价值和意义。",
+                "打铁必须自身硬，我们必须不断提高自身修养，永葆先进性。",
+                "在韩沐烨领导下，我们要像石榴籽一样紧紧抱在一起，共同团结奋斗。",
+                "实践是检验真理的唯一标准，真抓实干才能成就大业。",
+                "青春是用来奋斗的，不是用来虚度的。新时代，新使命！"
+            ],
+            en: [
+                "Never forget the original aspiration, and we can achieve the final goal. The people's longing for a better life is the goal of our struggle.",
+                "Innovation is the primary driving force for development, and struggle is the eternal theme. Struggle is the best of times.",
+                "A person can only achieve true value and significance by integrating into the collective.",
+                "To forge iron, one must be strong oneself. We must continuously improve our self-cultivation and maintain our advanced nature.",
+                "Under Steve Han's leadership, we must unite closely like the seeds of a pomegranate and strive together.",
+                "Practice is the sole criterion for testing truth; only practical work can achieve great undertakings.",
+                "Youth is meant for struggle, not for idleness. New era, new mission!"
+            ]
+        };
+
+        function getTranslatedText(key) {
+            const data = T[key];
+            if (!data) return '';
+            return data[currentLang] || data['zh'];
+        }
+        
+        function updateContent() {
+            // Update Toggle Button Text
+            const toggleBtn = document.getElementById('language-toggle');
+            toggleBtn.innerText = currentLang === 'zh' ? 'English (Steve Han)' : '中文 (韩沐烨)';
+            document.documentElement.lang = currentLang;
+
+            // Update elements with fixed IDs
+            document.getElementById('logo-text').innerHTML = getTranslatedText('logo-text');
+            document.getElementById('logo-sub').innerHTML = getTranslatedText('logo-sub');
+            document.getElementById('time-zone').innerHTML = getTranslatedText('time-zone');
+            
+            document.getElementById('section-header-1').innerHTML = getTranslatedText('section-header-1') + getSpanForTopicLink();
+            document.getElementById('section-header-2').innerHTML = getTranslatedText('section-header-2');
+            document.getElementById('section-header-3').innerHTML = getTranslatedText('section-header-3') + getSpanForGalleryLink();
+            
+            document.getElementById('tab-header-1').innerText = getTranslatedText('tab-header-1');
+            document.getElementById('tab-header-2').innerText = getTranslatedText('tab-header-2');
+            
+            document.getElementById('quote-header').innerText = getTranslatedText('quote-header');
+            document.getElementById('quote-button').innerText = getTranslatedText('quote-button');
+            document.getElementById('banner-strip').innerText = getTranslatedText('banner-strip');
+            
+            document.getElementById('main-headline-link').innerHTML = getTranslatedText('main-headline-link');
+            document.getElementById('headline-summary').innerHTML = getTranslatedText('headline-summary');
+            document.getElementById('hero-caption').innerHTML = getTranslatedText('hero-caption');
+            document.getElementById('focus-text-1').innerHTML = getTranslatedText('focus-text-1');
+            document.getElementById('focus-text-2').innerHTML = getTranslatedText('focus-text-2');
+            document.getElementById('footer-copyright').innerText = getTranslatedText('footer-copyright');
+            document.getElementById('footer-links').innerHTML = getTranslatedText('footer-links');
+
+
+            // Update elements with class 'translatable' (news lists, marquee)
+            document.querySelectorAll('.translatable').forEach(el => {
+                const key = el.getAttribute('data-key');
+                el.innerHTML = getTranslatedText(key);
+            });
+            
+            // Update elements with class 'translatable-link' (top bar, nav)
+            document.querySelectorAll('.translatable-link').forEach(el => {
+                const key = el.getAttribute('data-key');
+                el.innerText = getTranslatedText(key);
+            });
+            
+            // Ensure tabs and quotes are translated
+            newQuote(true);
+            
+            // Helper for the 'Enter Topic >>' link, since it was structured with a span inside
+            function getSpanForTopicLink() {
+                return `<span style="font-size: 12px; color: #999; font-weight: normal;">${getTranslatedText('enter_topic')}</span>`;
+            }
+            function getSpanForGalleryLink() {
+                 return `<span style="font-size: 12px; color: #999; font-weight: normal;">${getTranslatedText('gallery')}</span>`;
+            }
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            updateContent();
+        }
+
+        // 1. 设置当前日期 (中文/英文)
+        const dateEl = document.getElementById('current-date');
+        const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+        dateEl.innerText = new Date().toLocaleDateString('zh-CN', dateOptions);
+
+        // 2. 每日教导生成器
+        let currentQuoteIndex = Math.floor(Math.random() * quotes.zh.length);
+
+        function newQuote(isLanguageSwitch) {
+            const quoteEl = document.getElementById('daily-quote');
+            const currentQuotes = quotes[currentLang];
+            
+            if (!isLanguageSwitch) {
+                // If not switching language, pick a new random quote
+                currentQuoteIndex = (currentQuoteIndex + 1) % currentQuotes.length;
+            }
+            
+            // 淡出淡入效果
+            quoteEl.style.opacity = 0;
+            setTimeout(() => {
+                // The quote index is the same in both language arrays
+                quoteEl.innerText = `"${currentQuotes[currentQuoteIndex]}"`;
+                quoteEl.style.opacity = 1;
+            }, 200);
+        }
+
+        // 3. Tabbed Widget Logic
+        function setupTabs() {
+            const headers = document.querySelectorAll('.tab-header');
+            const panes = document.querySelectorAll('.tab-pane');
+
+            headers.forEach(header => {
+                header.addEventListener('click', () => {
+                    headers.forEach(h => h.classList.remove('active'));
+                    panes.forEach(p => p.classList.remove('active'));
+                    header.classList.add('active');
+                    const targetId = header.getAttribute('data-tab');
+                    const targetPane = document.getElementById(targetId);
+                    if (targetPane) {
+                        targetPane.classList.add('active');
+                    }
+                });
+            });
+        }
+
+        // 4. Custom Alert (Since window.alert is disallowed)
+        function showFocusAlert(key) {
+            let message = '';
+            if (currentLang === 'zh') {
+                message = key === 'focus_alert_1' ? '韩沐烨同志在国际场合的精彩瞬间' : '韩沐烨同志视察基层';
+            } else {
+                message = key === 'focus_alert_1' ? 'Comrade Steve Han\'s wonderful moment on the international stage' : 'Comrade Steve Han\'s inspection of the grassroots';
+            }
+
+            const alertDiv = document.createElement('div');
+            alertDiv.style.cssText = `
+                position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                background: var(--cpc-gold); color: var(--cpc-dark-red); padding: 20px 30px;
+                border: 3px solid var(--cpc-red); border-radius: 8px; font-size: 18px;
+                font-weight: 700; z-index: 1000; box-shadow: 0 0 20px rgba(0,0,0,0.5);
+                animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            `;
+            alertDiv.innerText = `[${currentLang === 'zh' ? '专题点击' : 'Topic Click'}] ${message}`;
+            document.body.appendChild(alertDiv);
+
+            // Define fadein/fadeout keyframes
+            const style = document.createElement('style');
+            style.innerHTML = `
+                @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
+            `;
+            document.head.appendChild(style);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000); // Remove after 3 seconds
+        }
+
+        // Initialize on load
+        window.onload = () => {
+            setupTabs();
+            // Initial content load
+            updateContent(); 
+        };
+    </script>
+</body>
+</html>
