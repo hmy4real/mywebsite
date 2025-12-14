@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steve's dih</title>
+    <style>
+        /* --- CORE SETTINGS --- */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+        :root {
+            --primary-glow: 0, 198, 255;
+            --secondary-glow: 122, 0, 255;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-color: #ffffff;
+            --error-color: #ff4b4b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a;
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* --- ANIMATED BACKGROUND --- */
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            background: radial-gradient(circle at 10% 20%, rgba(20, 0, 50, 1) 0%, rgba(0, 0, 0, 1) 90%);
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 10s infinite alternate;
+        }
+
+        .orb-1 { width: 300px; height: 300px; background: #00c6ff; top: 10%; left: 20%; animation-duration: 2s; }
+        .orb-2 { width: 400px; height: 400px; background: #7a00ff; bottom: 10%; right: 10%; animation-duration: 5s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(30px, 50px); }
+        }
+
+        /* --- HEADER SECTION --- */
+        header {
+            text-align: center;
+            margin-top: 100px;
+            margin-bottom: 80px;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        h1 {
+            font-weight: 800;
+            font-size: 4rem;
+            letter-spacing: -2px;
+            background: linear-gradient(to right, #fff, #a5a5a5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(255,255,255,0.1);
+        }
+
+        p.subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 300;
+        }
+
+        /* --- GRID CONTAINER --- */
+        .container {
+            width: 90%;
+            max-width: 1800px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+            padding-bottom: 60px;
+        }
+
+        /* --- CARDS (BOXES) --- */
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            animation: fadeInUp 0.8s ease-out forwards;
+            opacity: 0;
+            /* Ensure height doesn't collapse when locked */
+            min-height: 250px; 
+        }
+
+        /* Staggered animation delays */
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+        .card:nth-child(5) { animation-delay: 0.5s; }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 
+                        0 0 20px rgba(var(--primary-glow), 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 140px;
+            border-radius: 12px;
+            object-fit: cover;
+            margin-bottom: 15px;
+            mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: #fff;
+            padding-left: 5px;
+            border-left: 3px solid #00c6ff;
+            line-height: 1;
+        }
+
+        .link-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .link-list li a {
+            display: block;
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .link-list li a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding-left: 20px;
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 15px rgba(var(--primary-glow), 0.15);
+        }
+
+        .link-list li a::after {
+            content: '→';
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .link-list li a:hover::after {
+            opacity: 1;
+        }
+
+        /* --- PASSWORD SYSTEM STYLES --- */
+        .lock-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lock-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+
+        .pass-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            width: 100%;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .pass-input:focus {
+            border-color: #00c6ff;
+        }
+
+        .pass-btn {
+            background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-top: 2px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            transition: opacity 0.2s;
+        }
+
+        .pass-btn:hover {
+            opacity: 0.9;
+        }
+
+        .secret-content {
+            display: none; /* Hidden by default */
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Shake animation for wrong password */
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+            border-color: var(--error-color) !important;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background Elements -->
+    <div class="background">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+
+    <header>
+        <h1>Welcome Back, Steve</h1>
+        <p class="subtitle">Please look for what you need:</p>
+    </header>
+
+    <div class="container">
+
+        <!-- PHYSICS BOX -->
+        <div class="card">
+            <img src="https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?q=80&w=1000&auto=format&fit=crop" alt="Physics" class="card-image">
+            <h2>Physics</h2>
+            <ul class="link-list">
+                <li><a href="https://drive.google.com/file/d/1-enoONF2EQzFQfPK-A67MTC4HoE0qQr5/view" target="_blank">Physics 12 Formula Sheet</a></li>
+                <li><a href="https://apcentral.collegeboard.org/media/pdf/physics-cm-equations-sheet-2020.pdf" target="_blank">Physics C Formula Sheet</a></li>
+                <li><a href="https://sites.google.com/apcourses.ca/gowephysicsc/home" target="_blank">Gowe's Site</a></li>
+                <li><a href="https://commons.libretexts.org/book/phys-1989" target="_blank">Physics Textbook</a></li>
+            </ul>
+        </div>
+        
+                <div class="card">
+                    <img src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1200&q=80" alt="Content Creation" class="card-image">
+                    <h2>Study</h2>
+                    <ul class="link-list">
+                        <li><a href="https://www.studenttranscripts.gov.bc.ca/dash/dashboard/dashboard.jsf" target="_blank">BC Transcript</a></li>
+                        <li><a href="https://search.onlinelearningbc.com/" target="_blank">BC Course Finder</a></li>
+                        <li><a href="https://www.revisionvillage.com/" target="_blank">Revision Village</a></li>
+                        <li><a href="https://satsuitequestionbank.collegeboard.org/digital/search" target="_blank">SAT刷题</a></li>
+                        <li><a href="https://maa.edvistas.com/datamate/studentlogin.aspx" target="_blank">MAA Portal</a></li>
+                        <li><a href="https://cemc.uwaterloo.ca/resources/past-contests" target="_blank">CEMC Portal</a></li>
+                        <li><a href="https://usaco.org/" target="_blank">USACO Portal</a></li>
+                    </ul>
+                </div>
+        
+        <!-- CONTENT CREATION BOX -->
+        <div class="card">
+            <img src="https://images.unsplash.com/photo-1686061592315-af9342dc8d74?auto=format&fit=crop&w=1600&q=80" alt="Content Creation" class="card-image">
+            <h2>Creative</h2>
+            <ul class="link-list">
+                <li><a href="https://channels.weixin.qq.com/" target="_blank">视频号助手</a></li>
+                <li><a href="https://creator.douyin.com/creator-micro/content/upload" target="_blank">抖音创作者中心</a></li>
+                <li><a href="https://sticker.weixin.qq.com/" target="_blank">微信表情开放平台</a></li>
+                <li><a href="https://dlpanda.com/zh-CN?" target="_blank">抖音下载器</a></li>
+                <li><a href="https://yt5s.rip/en11/" target="_blank">YouTube下载器</a></li>
+                <li><a href="https://filehelper.weixin.qq.com/" target="_blank">文件传输助手网页版</a></li>
+                <li><a href="https://postimages.org/" target="_blank">Image Hoster</a></li>
+            </ul>
+        </div>
+
+        <!-- MATH BOX -->
+        <div class="card">
+            <img src="https://images.unsplash.com/photo-1509228468518-180dd4864904?q=80&w=1000&auto=format&fit=crop" alt="Math" class="card-image">
+            <h2>Math</h2>
+            <ul class="link-list">
+                <li><a href="https://hunkim.com/bc-math/calculus-12/" target="_blank">Hunkim Math</a></li>
+            </ul>
+        </div>
+
+        <!-- LOCKED BOX (Originally "Nothing") -->
+        <div class="card" id="locked-card">
+            
+            <!-- 1. The Lock Interface -->
+            <div class="lock-screen" id="lock-interface">
+                <div class="lock-icon">🔒</div>
+                <h3>Restricted</h3>
+                <input type="password" id="password-input" class="pass-input" placeholder="Enter Passcode">
+                <button onclick="checkPassword()" class="pass-btn">Unlock</button>
+            </div>
+
+            <!-- 2. The Hidden Content (Visible only after unlock) -->
+            <div class="secret-content" id="hidden-content">
+                <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1000&auto=format&fit=crop" alt="Placeholder" class="card-image">
+                <h2>8::::::::::::::::D</h2>
+                <ul class="link-list">
+                    <li><a href="http://91short.com/">91短视频</a></li>
+                    <li><a href="http://pornhub.com">Pornhub</a></li>
+                    <li><a href="https://hentaihaven.xxx/">Hentai Haven</a></li>
+                    <li><a href="https://rule34video.com/models/vicineko/">ViciNeko</a></li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT FOR PASSWORD LOGIC -->
+    <script>
+        function checkPassword() {
+            const input = document.getElementById('password-input');
+            const lockScreen = document.getElementById('lock-interface');
+            const secretContent = document.getElementById('hidden-content');
+            const card = document.getElementById('locked-card');
+            
+            // THE PASSWORD
+            const correctPass = "1216";
+
+            if (input.value === correctPass) {
+                // Correct Password: Hide lock, show content
+                lockScreen.style.display = 'none';
+                secretContent.style.display = 'block';
+            } else {
+                // Wrong Password: Shake animation
+                card.classList.add('shake');
+                input.value = ''; // clear input
+                input.placeholder = 'Access Denied';
+                
+                // Remove shake class after animation finishes so it can run again
+                setTimeout(() => {
+                    card.classList.remove('shake');
+                    input.placeholder = 'Enter Passcode';
+                }, 100);
+            }
+        }
+
+        // Allow pressing "Enter" key to submit
+        document.getElementById('password-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+    </script>
+
+</body>
+</html>
