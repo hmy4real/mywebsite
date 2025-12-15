@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steve's dih</title>
+    <title>Steve's Universe</title>
     <link rel="icon" href="https://i.postimg.cc/wvy7YZX0/stevehanlogored.png" type="image/png">
     <style>
         /* --- CORE SETTINGS --- */
@@ -11,11 +11,10 @@
 
         :root {
             --primary-glow: 0, 198, 255;
-            --secondary-glow: 122, 0, 255;
             --glass-bg: rgba(255, 255, 255, 0.05);
             --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-highlight: rgba(255, 255, 255, 0.2);
             --text-color: #ffffff;
-            --error-color: #ff4b4b; /* Original red error color */
         }
 
         * {
@@ -26,48 +25,37 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0a0a0a;
+            background-color: #050505;
             color: var(--text-color);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             overflow-x: hidden;
+            position: relative;
         }
 
-        /* --- ANIMATED BACKGROUND --- */
-        .background {
+        /* --- UNIVERSE CANVAS --- */
+        #universe {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
             z-index: -1;
-            background: radial-gradient(circle at 10% 20%, rgba(20, 0, 50, 1) 0%, rgba(0, 0, 0, 1) 90%);
-        }
-
-        .orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.4;
-            animation: float 10s infinite alternate;
-        }
-
-        .orb-1 { width: 300px; height: 300px; background: #00c6ff; top: 10%; left: 20%; animation-duration: 2s; }
-        .orb-2 { width: 400px; height: 400px; background: #7a00ff; bottom: 10%; right: 10%; animation-duration: 5s; }
-
-        @keyframes float {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(30px, 50px); }
+            background: radial-gradient(circle at center, #0b0b15 0%, #000000 100%);
         }
 
         /* --- HEADER SECTION --- */
         header {
             text-align: center;
-            margin-top: 100px;
-            margin-bottom: 80px;
-            animation: fadeInDown 1s ease-out;
+            margin-top: 80px;
+            margin-bottom: 40px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
         }
 
         h1 {
@@ -77,14 +65,98 @@
             background: linear-gradient(to right, #fff, #a5a5a5);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             text-shadow: 0 0 30px rgba(255,255,255,0.1);
+            min-height: 1.2em;
+            display: inline-block;
+        }
+
+        /* Blinking cursor for typing effect */
+        .typing-cursor {
+            display: inline-block;
+            width: 4px;
+            height: 1em;
+            background-color: #00c6ff;
+            margin-left: 5px;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
         }
 
         p.subtitle {
             font-size: 1.2rem;
             color: rgba(255, 255, 255, 0.6);
             font-weight: 300;
+            margin-bottom: 30px;
+        }
+
+        /* --- ENHANCED GLASS SEARCH BAR --- */
+        .search-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 40px;
+            z-index: 20;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 18px 25px;
+            padding-left: 25px;
+            font-size: 1.1rem;
+            color: white;
+            /* Deeper glass effect */
+            background: rgba(20, 20, 25, 0.4); 
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-top: 1px solid rgba(255, 255, 255, 0.3); /* Top highlight */
+            border-radius: 16px; /* Slightly squarer for modern look */
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            outline: none;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 
+                0 4px 30px rgba(0, 0, 0, 0.3),
+                inset 0 0 20px rgba(255, 255, 255, 0.02);
+        }
+
+        .search-bar::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .search-bar:focus {
+            background: rgba(30, 30, 40, 0.6);
+            border-color: rgba(0, 198, 255, 0.5);
+            box-shadow: 
+                0 10px 40px rgba(0, 0, 0, 0.5),
+                0 0 30px rgba(0, 198, 255, 0.15),
+                inset 0 0 20px rgba(255, 255, 255, 0.05);
+            transform: translateY(-2px) scale(1.01);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 22px;
+            height: 22px;
+            pointer-events: none;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        .search-bar:focus + .search-icon {
+            opacity: 1;
+            color: #00c6ff;
+        }
+        
+        .search-icon circle, .search-icon line {
+            stroke: currentColor;
+            stroke-width: 2;
         }
 
         /* --- GRID CONTAINER --- */
@@ -95,17 +167,24 @@
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 30px;
             padding-bottom: 60px;
+            z-index: 10;
         }
 
-        /* --- CARDS (BOXES) --- */
+        /* --- ENHANCED GLASS CARDS --- */
         .card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 20px;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.05) 0%,
+                rgba(255, 255, 255, 0.01) 100%
+            );
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 1px solid rgba(255, 255, 255, 0.2); /* Lighting from top */
+            border-left: 1px solid rgba(255, 255, 255, 0.15); /* Lighting from left */
+            border-radius: 24px;
+            padding: 24px;
+            backdrop-filter: blur(25px); /* Stronger blur */
+            -webkit-backdrop-filter: blur(25px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -113,6 +192,16 @@
             animation: fadeInUp 0.8s ease-out forwards;
             opacity: 0;
             min-height: 250px; 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 
+                0 20px 50px rgba(0, 0, 0, 0.5), 
+                0 0 30px rgba(var(--primary-glow), 0.1),
+                inset 0 0 20px rgba(255, 255, 255, 0.05); /* Inner glow on hover */
+            border-color: rgba(255, 255, 255, 0.3);
         }
 
         /* Staggered animation delays */
@@ -120,65 +209,91 @@
         .card:nth-child(2) { animation-delay: 0.2s; }
         .card:nth-child(3) { animation-delay: 0.3s; }
         .card:nth-child(4) { animation-delay: 0.4s; }
-        .card:nth-child(5) { animation-delay: 0.5s; } /* Re-added delay for the new 5th card */
-
-        .card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 
-                        0 0 20px rgba(var(--primary-glow), 0.2);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
 
         .card-image {
             width: 100%;
             height: 140px;
-            border-radius: 12px;
+            border-radius: 16px;
             object-fit: cover;
-            margin-bottom: 15px;
-            mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+            margin-bottom: 20px;
+            mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+            transition: transform 0.6s ease;
+            z-index: 2;
+        }
+
+        .card:hover .card-image {
+            transform: scale(1.08);
         }
 
         .card h2 {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             margin-bottom: 15px;
-            font-weight: 600;
+            font-weight: 700;
             color: #fff;
-            padding-left: 5px;
+            padding-left: 10px;
             border-left: 3px solid #00c6ff;
             line-height: 1;
+            z-index: 2;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
 
         .link-list {
             list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
+            z-index: 2;
         }
 
+        /* --- LINK SHIMMER EFFECT --- */
         .link-list li a {
             display: block;
             text-decoration: none;
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.8);
             background: rgba(255, 255, 255, 0.03);
-            /* ADDED: Ensures all buttons are the same height */
             min-height: 50px; 
-            padding: 12px 15px;
-            border-radius: 10px;
+            padding: 12px 18px;
+            border-radius: 12px;
             font-size: 0.95rem;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             border: 1px solid transparent;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Shimmer Animation Layer */
+        .link-list li a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.2), 
+                transparent
+            );
+            transition: left 0.5s;
+        }
+
+        .link-list li a:hover::before {
+            left: 100%;
+            transition: left 0.5s;
         }
 
         .link-list li a:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
             color: #fff;
-            padding-left: 20px;
-            border-color: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 0 15px rgba(var(--primary-glow), 0.15);
+            padding-left: 22px;
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: translateX(2px);
         }
 
         .link-list li a::after {
@@ -191,13 +306,6 @@
             opacity: 1;
         }
         
-        /* Removed all PASSWORD SYSTEM STYLES (lock-screen, pass-input, shake, etc.) */
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
         @keyframes fadeInDown {
             from { opacity: 0; transform: translateY(-30px); }
             to { opacity: 1; transform: translateY(0); }
@@ -208,7 +316,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* --- RESPONSIVE --- */
         @media (max-width: 768px) {
             h1 { font-size: 2.5rem; }
             .container { grid-template-columns: 1fr; }
@@ -217,21 +324,29 @@
 </head>
 <body>
 
-    <!-- Background Elements -->
-    <div class="background">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-    </div>
+    <!-- Universe System Canvas -->
+    <canvas id="universe"></canvas>
 
     <header>
-        <h1>Welcome Back, Steve</h1>
+        <h1><span id="typing-text"></span><span class="typing-cursor"></span></h1>
         <p class="subtitle">Please look for what you need:</p>
+        
+        <!-- Glass Search Bar -->
+        <div class="search-container">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="white">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <form action="https://www.google.com/search" method="GET" target="_blank">
+                <input type="text" name="q" class="search-bar" placeholder="Search Google" autocomplete="off">
+            </form>
+        </div>
     </header>
 
     <div class="container">
 
         <!-- PHYSICS BOX -->
-        <div class="card">
+        <div class="card interactive-card">
             <img src="https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?q=80&w=1000&auto=format&fit=crop" alt="Physics" class="card-image">
             <h2>Physics & Math</h2>
             <ul class="link-list">
@@ -243,7 +358,7 @@
             </ul>
         </div>
         
-        <div class="card">
+        <div class="card interactive-card">
             <img src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1200&q=80" alt="Study" class="card-image">
             <h2>Study</h2>
             <ul class="link-list">
@@ -258,7 +373,7 @@
         </div>
         
         <!-- CONTENT CREATION BOX -->
-        <div class="card">
+        <div class="card interactive-card">
             <img src="https://images.unsplash.com/photo-1686061592315-af9342dc8d74?auto=format&fit=crop&w=1600&q=80" alt="Creative" class="card-image">
             <h2>Creative</h2>
             <ul class="link-list">
@@ -273,7 +388,7 @@
         </div>
 
         <!-- MATH BOX -->
-        <div class="card">
+        <div class="card interactive-card">
             <img src="https://images.unsplash.com/photo-1674027444485-cec3da58eef4?auto=format&fit=crop&w=1200&q=80" alt="AI" class="card-image">
             <h2>AI</h2>
             <ul class="link-list">
@@ -289,7 +404,335 @@
 
     </div>
 
-    <!-- Removed JAVASCRIPT FOR PASSWORD LOGIC -->
+    <script>
+        // --- LIVE TYPING & DELETING EFFECT ---
+        const textToType = "Welcome Back, Steve";
+        const typeContainer = document.getElementById("typing-text");
+        let typeIndex = 0;
+        let isDeleting = false;
+        let typeSpeed = 150;
+        
+        function typeWriter() {
+            const currentString = textToType;
+            
+            if (isDeleting) {
+                // Remove characters
+                typeContainer.innerHTML = currentString.substring(0, typeIndex - 1);
+                typeIndex--;
+                typeSpeed = 50; // Faster when deleting
+            } else {
+                // Add characters
+                typeContainer.innerHTML = currentString.substring(0, typeIndex + 1);
+                typeIndex++;
+                typeSpeed = 100; // Normal typing speed
+            }
 
+            // Logic to switch between typing and deleting
+            if (!isDeleting && typeIndex === currentString.length) {
+                // Finished typing, wait before deleting
+                isDeleting = true;
+                typeSpeed = 5000; // Pause at end
+            } else if (isDeleting && typeIndex === 0) {
+                // Finished deleting, wait before typing
+                isDeleting = false;
+                typeSpeed = 1000; // Pause at start
+            }
+
+            setTimeout(typeWriter, typeSpeed);
+        }
+        
+        // Start typing
+        setTimeout(typeWriter, 500);
+
+        // --- UNIVERSE PARTICLE SYSTEM (CANVAS) ---
+        const canvas = document.getElementById('universe');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let particles = [];
+        let stars = [];
+        let asteroids = [];
+        let nebulas = [];
+        
+        // Mouse state
+        const mouse = { x: -1000, y: -1000 };
+
+        window.addEventListener('mousemove', e => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            initUniverse();
+        }
+        
+        window.addEventListener('resize', resize);
+
+        class Nebula {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 300 + 200;
+                this.colorHue = Math.random() * 60 + 240; // Blues and Purples (240-300)
+                this.vx = (Math.random() - 0.5) * 0.2;
+                this.vy = (Math.random() - 0.5) * 0.2;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                if(this.x < -this.size) this.x = width + this.size;
+                if(this.x > width + this.size) this.x = -this.size;
+                if(this.y < -this.size) this.y = height + this.size;
+                if(this.y > height + this.size) this.y = -this.size;
+            }
+
+            draw() {
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+                gradient.addColorStop(0, `hsla(${this.colorHue}, 80%, 60%, 0.08)`);
+                gradient.addColorStop(1, 'transparent');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class Star {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 1.5;
+                this.alpha = Math.random();
+                this.twinkleSpeed = Math.random() * 0.02 + 0.005;
+                // Add Physics capabilities to stars too
+                this.vx = 0;
+                this.vy = 0;
+                this.friction = 0.95; // Higher friction for stars so they don't fly too far
+            }
+            
+            update() {
+                this.alpha += this.twinkleSpeed;
+                if (this.alpha > 1 || this.alpha < 0) {
+                    this.twinkleSpeed *= -1;
+                }
+
+                // WHITE HOLE EFFECT FOR STARS (Weaker than particles)
+                const dx = this.x - mouse.x;
+                const dy = this.y - mouse.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const forceDistance = 150; // Smaller interaction radius for background stars
+
+                if (distance < forceDistance) {
+                    const force = (forceDistance - distance) / forceDistance;
+                    const angle = Math.atan2(dy, dx);
+                    const pushStrength = 0.5; // Gentle push
+
+                    this.vx += Math.cos(angle) * force * pushStrength;
+                    this.vy += Math.sin(angle) * force * pushStrength;
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                this.vx *= this.friction;
+                this.vy *= this.friction;
+
+                // Screen Wrap
+                if (this.x < 0) this.x = width;
+                if (this.x > width) this.x = 0;
+                if (this.y < 0) this.y = height;
+                if (this.y > height) this.y = 0;
+            }
+            
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(this.alpha)})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5; 
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2 + 1;
+                this.color = Math.random() > 0.5 ? '#00c6ff' : '#7a00ff';
+                this.friction = 0.96; 
+            }
+
+            update() {
+                // --- WHITE HOLE LOGIC (Push Away) ---
+                // Calculate vector FROM mouse TO particle
+                const dx = this.x - mouse.x;
+                const dy = this.y - mouse.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const forceDistance = 250; 
+                
+                if (distance < forceDistance) {
+                    const force = (forceDistance - distance) / forceDistance; // Stronger closer to mouse
+                    const angle = Math.atan2(dy, dx);
+                    const pushStrength = 2; // Strong push force
+
+                    this.vx += Math.cos(angle) * force * pushStrength;
+                    this.vy += Math.sin(angle) * force * pushStrength;
+                }
+
+                // Friction to stabilize speed
+                this.vx *= this.friction;
+                this.vy *= this.friction;
+
+                // Min speed check (keep them moving slightly)
+                if(Math.abs(this.vx) < 0.1 && Math.abs(this.vy) < 0.1) {
+                   this.vx += (Math.random() - 0.5) * 0.05;
+                   this.vy += (Math.random() - 0.5) * 0.05;
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Screen Wrap 
+                if (this.x < 0) this.x = width;
+                if (this.x > width) this.x = 0;
+                if (this.y < 0) this.y = height;
+                if (this.y > height) this.y = 0;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        class Asteroid {
+            constructor() {
+                this.reset();
+            }
+            
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 3 + 2;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Slight interaction for asteroids too
+                const dx = this.x - mouse.x;
+                const dy = this.y - mouse.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < 200) {
+                     const angle = Math.atan2(dy, dx);
+                     this.vx += Math.cos(angle) * 0.05;
+                     this.vy += Math.sin(angle) * 0.05;
+                }
+                
+                if (this.x < -50 || this.x > width + 50 || this.y < -50 || this.y > height + 50) {
+                    this.reset();
+                }
+            }
+            
+            draw() {
+                ctx.fillStyle = 'rgba(150, 150, 150, 0.5)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initUniverse() {
+            particles = [];
+            stars = [];
+            asteroids = [];
+            nebulas = [];
+            
+            // INCREASED DENSITY
+            
+            // 8 Nebulas (Background)
+            for (let i = 0; i < 8; i++) {
+                nebulas.push(new Nebula());
+            }
+
+            // 600 Stars (Significantly more!)
+            for (let i = 0; i < 600; i++) {
+                stars.push(new Star());
+            }
+            
+            // 150 Particles (More constellations)
+            for (let i = 0; i < 150; i++) {
+                particles.push(new Particle());
+            }
+            
+            // 30 Asteroids
+            for (let i = 0; i < 30; i++) {
+                asteroids.push(new Asteroid());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw Nebulas
+            nebulas.forEach(n => {
+                n.update();
+                n.draw();
+            });
+
+            // Draw Stars
+            stars.forEach(star => {
+                star.update();
+                star.draw();
+            });
+            
+            // Draw Asteroids
+            asteroids.forEach(asteroid => {
+                asteroid.update();
+                asteroid.draw();
+            });
+
+            // Draw Particles
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                p.update();
+                p.draw();
+                
+                // Draw lines to nearby particles
+                for (let j = i; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    const dx = p.x - p2.x;
+                    const dy = p.y - p2.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 100) {
+                        ctx.strokeStyle = `rgba(100, 100, 255, ${0.15 * (1 - distance/100)})`;
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        resize();
+        animate();
+
+    </script>
 </body>
 </html>
