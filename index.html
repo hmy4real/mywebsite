@@ -15,7 +15,7 @@
             --glass-bg: rgba(255, 255, 255, 0.05);
             --glass-border: rgba(255, 255, 255, 0.1);
             --text-color: #ffffff;
-            --error-color: #ff4b4b;
+            --error-color: #ff4b4b; /* Original red error color */
         }
 
         * {
@@ -90,7 +90,7 @@
         /* --- GRID CONTAINER --- */
         .container {
             width: 90%;
-            max-width: 1800px;
+            max-width: 1600px;
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 30px;
@@ -112,7 +112,6 @@
             position: relative;
             animation: fadeInUp 0.8s ease-out forwards;
             opacity: 0;
-            /* Ensure height doesn't collapse when locked */
             min-height: 250px; 
         }
 
@@ -121,7 +120,7 @@
         .card:nth-child(2) { animation-delay: 0.2s; }
         .card:nth-child(3) { animation-delay: 0.3s; }
         .card:nth-child(4) { animation-delay: 0.4s; }
-        .card:nth-child(5) { animation-delay: 0.5s; }
+        .card:nth-child(5) { animation-delay: 0.5s; } /* Re-added delay for the new 5th card */
 
         .card:hover {
             transform: translateY(-10px);
@@ -162,6 +161,8 @@
             text-decoration: none;
             color: rgba(255, 255, 255, 0.7);
             background: rgba(255, 255, 255, 0.03);
+            /* ADDED: Ensures all buttons are the same height */
+            min-height: 50px; 
             padding: 12px 15px;
             border-radius: 10px;
             font-size: 0.95rem;
@@ -189,77 +190,8 @@
         .link-list li a:hover::after {
             opacity: 1;
         }
-
-        /* --- PASSWORD SYSTEM STYLES --- */
-        .lock-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            width: 100%;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .lock-icon {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            opacity: 0.8;
-        }
-
-        .pass-input {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            width: 100%;
-            margin-top: 20px;
-            margin-bottom: 10px;
-            font-family: 'Inter', sans-serif;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        .pass-input:focus {
-            border-color: #00c6ff;
-        }
-
-        .pass-btn {
-            background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            margin-top: 2px;
-            cursor: pointer;
-            font-weight: 600;
-            width: 100%;
-            transition: opacity 0.2s;
-        }
-
-        .pass-btn:hover {
-            opacity: 0.9;
-        }
-
-        .secret-content {
-            display: none; /* Hidden by default */
-            animation: fadeIn 0.5s ease-out;
-        }
-
-        /* Shake animation for wrong password */
-        .shake {
-            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-            border-color: var(--error-color) !important;
-        }
-
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-1px, 0, 0); }
-            20%, 80% { transform: translate3d(2px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-            40%, 60% { transform: translate3d(4px, 0, 0); }
-        }
+        
+        /* Removed all PASSWORD SYSTEM STYLES (lock-screen, pass-input, shake, etc.) */
 
         @keyframes fadeIn {
             from { opacity: 0; }
@@ -301,32 +233,33 @@
         <!-- PHYSICS BOX -->
         <div class="card">
             <img src="https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?q=80&w=1000&auto=format&fit=crop" alt="Physics" class="card-image">
-            <h2>Physics</h2>
+            <h2>Physics & Math</h2>
             <ul class="link-list">
                 <li><a href="https://drive.google.com/file/d/1-enoONF2EQzFQfPK-A67MTC4HoE0qQr5/view" target="_blank">Physics 12 Formula Sheet</a></li>
                 <li><a href="https://apcentral.collegeboard.org/media/pdf/physics-cm-equations-sheet-2020.pdf" target="_blank">Physics C Formula Sheet</a></li>
                 <li><a href="https://sites.google.com/apcourses.ca/gowephysicsc/home" target="_blank">Gowe's Site</a></li>
                 <li><a href="https://commons.libretexts.org/book/phys-1989" target="_blank">Physics Textbook</a></li>
+                <li><a href="https://hunkim.com/bc-math/calculus-12/" target="_blank">Hunkim Math</a></li>
             </ul>
         </div>
         
-                <div class="card">
-                    <img src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1200&q=80" alt="Content Creation" class="card-image">
-                    <h2>Study</h2>
-                    <ul class="link-list">
-                        <li><a href="https://www.studenttranscripts.gov.bc.ca/dash/dashboard/dashboard.jsf" target="_blank">BC Transcript</a></li>
-                        <li><a href="https://search.onlinelearningbc.com/" target="_blank">BC Course Finder</a></li>
-                        <li><a href="https://www.revisionvillage.com/" target="_blank">Revision Village</a></li>
-                        <li><a href="https://satsuitequestionbank.collegeboard.org/digital/search" target="_blank">SAT刷题</a></li>
-                        <li><a href="https://maa.edvistas.com/datamate/studentlogin.aspx" target="_blank">MAA Portal</a></li>
-                        <li><a href="https://cemc.uwaterloo.ca/resources/past-contests" target="_blank">CEMC Portal</a></li>
-                        <li><a href="https://usaco.org/" target="_blank">USACO Portal</a></li>
-                    </ul>
-                </div>
+        <div class="card">
+            <img src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1200&q=80" alt="Study" class="card-image">
+            <h2>Study</h2>
+            <ul class="link-list">
+                <li><a href="https://www.studenttranscripts.gov.bc.ca/dash/dashboard/dashboard.jsf" target="_blank">BC Transcript</a></li>
+                <li><a href="https://search.onlinelearningbc.com/" target="_blank">BC Course Finder</a></li>
+                <li><a href="https://www.revisionvillage.com/" target="_blank">Revision Village</a></li>
+                <li><a href="https://satsuitequestionbank.collegeboard.org/digital/search" target="_blank">SAT刷题</a></li>
+                <li><a href="https://maa.edvistas.com/datamate/studentlogin.aspx" target="_blank">MAA Portal</a></li>
+                <li><a href="https://cemc.uwaterloo.ca/resources/past-contests" target="_blank">CEMC Portal</a></li>
+                <li><a href="https://usaco.org/" target="_blank">USACO Portal</a></li>
+            </ul>
+        </div>
         
         <!-- CONTENT CREATION BOX -->
         <div class="card">
-            <img src="https://images.unsplash.com/photo-1686061592315-af9342dc8d74?auto=format&fit=crop&w=1600&q=80" alt="Content Creation" class="card-image">
+            <img src="https://images.unsplash.com/photo-1686061592315-af9342dc8d74?auto=format&fit=crop&w=1600&q=80" alt="Creative" class="card-image">
             <h2>Creative</h2>
             <ul class="link-list">
                 <li><a href="https://channels.weixin.qq.com/" target="_blank">视频号助手</a></li>
@@ -341,75 +274,22 @@
 
         <!-- MATH BOX -->
         <div class="card">
-            <img src="https://images.unsplash.com/photo-1509228468518-180dd4864904?q=80&w=1000&auto=format&fit=crop" alt="Math" class="card-image">
-            <h2>Math</h2>
+            <img src="https://images.unsplash.com/photo-1674027444485-cec3da58eef4?auto=format&fit=crop&w=1200&q=80" alt="AI" class="card-image">
+            <h2>AI</h2>
             <ul class="link-list">
-                <li><a href="https://hunkim.com/bc-math/calculus-12/" target="_blank">Hunkim Math</a></li>
+                <li><a href="https://gemini.google.com/app" target="_blank">Gemini</a></li>
+                <li><a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a></li>
+                <li><a href="https://grok.com/" target="_blank">Grok</a></li>
+                <li><a href="https://claude.ai/" target="_blank">Claude</a></li>
+                <li><a href="https://chat.deepseek.com/" target="_blank">DeepSeek</a></li>
+                <li><a href="https://www.doubao.com/chat/" target="_blank">豆包</a></li>
+                <li><a href="https://chat.qwen.ai/" target="_blank">通义千问</a></li>
             </ul>
-        </div>
-
-        <!-- LOCKED BOX (Originally "Nothing") -->
-        <div class="card" id="locked-card">
-            
-            <!-- 1. The Lock Interface -->
-            <div class="lock-screen" id="lock-interface">
-                <div class="lock-icon">🔒</div>
-                <h3>Restricted</h3>
-                <input type="password" id="password-input" class="pass-input" placeholder="Enter Passcode">
-                <button onclick="checkPassword()" class="pass-btn">Unlock</button>
-            </div>
-
-            <!-- 2. The Hidden Content (Visible only after unlock) -->
-            <div class="secret-content" id="hidden-content">
-                <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1000&auto=format&fit=crop" alt="Placeholder" class="card-image">
-                <h2>8::::::::::::::::D</h2>
-                <ul class="link-list">
-                    <li><a href="http://91short.com/">91短视频</a></li>
-                    <li><a href="http://pornhub.com">Pornhub</a></li>
-                    <li><a href="https://hentaihaven.xxx/">Hentai Haven</a></li>
-                    <li><a href="https://rule34video.com/models/vicineko/">ViciNeko</a></li>
-                </ul>
-            </div>
         </div>
 
     </div>
 
-    <!-- JAVASCRIPT FOR PASSWORD LOGIC -->
-    <script>
-        function checkPassword() {
-            const input = document.getElementById('password-input');
-            const lockScreen = document.getElementById('lock-interface');
-            const secretContent = document.getElementById('hidden-content');
-            const card = document.getElementById('locked-card');
-            
-            // THE PASSWORD
-            const correctPass = "1216";
-
-            if (input.value === correctPass) {
-                // Correct Password: Hide lock, show content
-                lockScreen.style.display = 'none';
-                secretContent.style.display = 'block';
-            } else {
-                // Wrong Password: Shake animation
-                card.classList.add('shake');
-                input.value = ''; // clear input
-                input.placeholder = 'Access Denied';
-                
-                // Remove shake class after animation finishes so it can run again
-                setTimeout(() => {
-                    card.classList.remove('shake');
-                    input.placeholder = 'Enter Passcode';
-                }, 100);
-            }
-        }
-
-        // Allow pressing "Enter" key to submit
-        document.getElementById('password-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                checkPassword();
-            }
-        });
-    </script>
+    <!-- Removed JAVASCRIPT FOR PASSWORD LOGIC -->
 
 </body>
 </html>
