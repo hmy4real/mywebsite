@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steves big dih</title>
+    <title>Steve's Universe</title>
     <link rel="icon" href="https://i.postimg.cc/wvy7YZX0/stevehanlogored.png" type="image/png">
     <style>
         /* --- CORE SETTINGS --- */
@@ -25,7 +25,7 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #050505;
+            background: radial-gradient(circle at center, #0b0b15 0%, #000000 100%);
             color: var(--text-color);
             min-height: 100vh;
             display: flex;
@@ -33,17 +33,6 @@
             align-items: center;
             overflow-x: hidden;
             position: relative;
-        }
-
-        /* --- UNIVERSE CANVAS --- */
-        #universe {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -1;
-            background: radial-gradient(circle at center, #0b0b15 0%, #000000 100%);
         }
 
         /* --- HEADER SECTION --- */
@@ -69,22 +58,10 @@
             text-shadow: 0 0 30px rgba(255,255,255,0.1);
             min-height: 1.2em;
             display: inline-block;
-        }
-
-        /* Blinking cursor for typing effect */
-        .typing-cursor {
-            display: inline-block;
-            width: 4px;
-            height: 1em;
-            background-color: #00c6ff;
-            margin-left: 5px;
-            animation: blink 1s infinite;
-            vertical-align: middle;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
+            
+            /* Animation Properties */
+            opacity: 0;
+            animation: fadeInUp 1s ease-out forwards;
         }
 
         p.subtitle {
@@ -92,6 +69,11 @@
             color: rgba(255, 255, 255, 0.6);
             font-weight: 300;
             margin-bottom: 30px;
+
+            /* Animation Properties */
+            opacity: 0;
+            animation: fadeInUp 1s ease-out forwards;
+            animation-delay: 0.2s; /* Delays slightly after title */
         }
 
         /* --- ENHANCED GLASS SEARCH BAR --- */
@@ -101,6 +83,11 @@
             max-width: 600px;
             margin-bottom: 40px;
             z-index: 20;
+            
+            /* Animation Properties */
+            opacity: 0;
+            animation: fadeInUp 1s ease-out forwards;
+            animation-delay: 0.4s; /* Delays slightly after subtitle */
         }
 
         .search-bar {
@@ -246,7 +233,7 @@
             z-index: 2;
         }
 
-        /* --- LINK SHIMMER EFFECT --- */
+        /* --- LINK STYLES (Clean, No Shimmer) --- */
         .link-list li a {
             display: block;
             text-decoration: none;
@@ -262,29 +249,6 @@
             justify-content: space-between;
             align-items: center;
             position: relative;
-            overflow: hidden;
-        }
-
-        /* Shimmer Animation Layer */
-        .link-list li a::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                90deg, 
-                transparent, 
-                rgba(255, 255, 255, 0.2), 
-                transparent
-            );
-            transition: left 0.5s;
-        }
-
-        .link-list li a:hover::before {
-            left: 100%;
-            transition: left 0.5s;
         }
 
         .link-list li a:hover {
@@ -324,19 +288,13 @@
 </head>
 <body>
 
-    <!-- Universe System Canvas -->
-    <canvas id="universe"></canvas>
-
     <header>
-        <h1><span id="typing-text"></span><span class="typing-cursor"></span></h1>
+        <!-- Static text without typing effect -->
+        <h1>Welcome Back, Steve</h1>
         <p class="subtitle">Please look for what you need:</p>
         
         <!-- Glass Search Bar -->
         <div class="search-container">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="white">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
             <form action="https://www.google.com/search" method="GET" target="_blank">
                 <input type="text" name="q" class="search-bar" placeholder="Search Google" autocomplete="off">
             </form>
@@ -347,7 +305,7 @@
 
         <!-- PHYSICS BOX -->
         <div class="card interactive-card">
-            <img src="https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?q=80&w=1000&auto=format&fit=crop" alt="Physics" class="card-image">
+            
             <h2>Physics & Math</h2>
             <ul class="link-list">
                 <li><a href="https://drive.google.com/file/d/1-enoONF2EQzFQfPK-A67MTC4HoE0qQr5/view" target="_blank">Physics 12 Formula Sheet</a></li>
@@ -359,7 +317,6 @@
         </div>
         
         <div class="card interactive-card">
-            <img src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1200&q=80" alt="Study" class="card-image">
             <h2>Study</h2>
             <ul class="link-list">
                 <li><a href="https://www.studenttranscripts.gov.bc.ca/dash/dashboard/dashboard.jsf" target="_blank">BC Transcript</a></li>
@@ -374,7 +331,6 @@
         
         <!-- CONTENT CREATION BOX -->
         <div class="card interactive-card">
-            <img src="https://images.unsplash.com/photo-1686061592315-af9342dc8d74?auto=format&fit=crop&w=1600&q=80" alt="Creative" class="card-image">
             <h2>Creative</h2>
             <ul class="link-list">
                 <li><a href="https://channels.weixin.qq.com/" target="_blank">视频号助手</a></li>
@@ -389,7 +345,6 @@
 
         <!-- MATH BOX -->
         <div class="card interactive-card">
-            <img src="https://images.unsplash.com/photo-1674027444485-cec3da58eef4?auto=format&fit=crop&w=1200&q=80" alt="AI" class="card-image">
             <h2>AI</h2>
             <ul class="link-list">
                 <li><a href="https://gemini.google.com/app" target="_blank">Gemini</a></li>
@@ -404,335 +359,5 @@
 
     </div>
 
-    <script>
-        // --- LIVE TYPING & DELETING EFFECT ---
-        const textToType = "Welcome Back, Steve";
-        const typeContainer = document.getElementById("typing-text");
-        let typeIndex = 0;
-        let isDeleting = false;
-        let typeSpeed = 150;
-        
-        function typeWriter() {
-            const currentString = textToType;
-            
-            if (isDeleting) {
-                // Remove characters
-                typeContainer.innerHTML = currentString.substring(0, typeIndex - 1);
-                typeIndex--;
-                typeSpeed = 50; // Faster when deleting
-            } else {
-                // Add characters
-                typeContainer.innerHTML = currentString.substring(0, typeIndex + 1);
-                typeIndex++;
-                typeSpeed = 100; // Normal typing speed
-            }
-
-            // Logic to switch between typing and deleting
-            if (!isDeleting && typeIndex === currentString.length) {
-                // Finished typing, wait before deleting
-                isDeleting = true;
-                typeSpeed = 5000; // Pause at end
-            } else if (isDeleting && typeIndex === 0) {
-                // Finished deleting, wait before typing
-                isDeleting = false;
-                typeSpeed = 1000; // Pause at start
-            }
-
-            setTimeout(typeWriter, typeSpeed);
-        }
-        
-        // Start typing
-        setTimeout(typeWriter, 500);
-
-        // --- UNIVERSE PARTICLE SYSTEM (CANVAS) ---
-        const canvas = document.getElementById('universe');
-        const ctx = canvas.getContext('2d');
-        
-        let width, height;
-        let particles = [];
-        let stars = [];
-        let asteroids = [];
-        let nebulas = [];
-        
-        // Mouse state
-        const mouse = { x: -1000, y: -1000 };
-
-        window.addEventListener('mousemove', e => {
-            mouse.x = e.clientX;
-            mouse.y = e.clientY;
-        });
-
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            initUniverse();
-        }
-        
-        window.addEventListener('resize', resize);
-
-        class Nebula {
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.size = Math.random() * 300 + 200;
-                this.colorHue = Math.random() * 60 + 240; // Blues and Purples (240-300)
-                this.vx = (Math.random() - 0.5) * 0.2;
-                this.vy = (Math.random() - 0.5) * 0.2;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                
-                if(this.x < -this.size) this.x = width + this.size;
-                if(this.x > width + this.size) this.x = -this.size;
-                if(this.y < -this.size) this.y = height + this.size;
-                if(this.y > height + this.size) this.y = -this.size;
-            }
-
-            draw() {
-                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
-                gradient.addColorStop(0, `hsla(${this.colorHue}, 80%, 60%, 0.08)`);
-                gradient.addColorStop(1, 'transparent');
-                
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        class Star {
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.size = Math.random() * 1.5;
-                this.alpha = Math.random();
-                this.twinkleSpeed = Math.random() * 0.02 + 0.005;
-                // Add Physics capabilities to stars too
-                this.vx = 0;
-                this.vy = 0;
-                this.friction = 0.95; // Higher friction for stars so they don't fly too far
-            }
-            
-            update() {
-                this.alpha += this.twinkleSpeed;
-                if (this.alpha > 1 || this.alpha < 0) {
-                    this.twinkleSpeed *= -1;
-                }
-
-                // WHITE HOLE EFFECT FOR STARS (Weaker than particles)
-                const dx = this.x - mouse.x;
-                const dy = this.y - mouse.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                const forceDistance = 150; // Smaller interaction radius for background stars
-
-                if (distance < forceDistance) {
-                    const force = (forceDistance - distance) / forceDistance;
-                    const angle = Math.atan2(dy, dx);
-                    const pushStrength = 0.5; // Gentle push
-
-                    this.vx += Math.cos(angle) * force * pushStrength;
-                    this.vy += Math.sin(angle) * force * pushStrength;
-                }
-
-                this.x += this.vx;
-                this.y += this.vy;
-
-                this.vx *= this.friction;
-                this.vy *= this.friction;
-
-                // Screen Wrap
-                if (this.x < 0) this.x = width;
-                if (this.x > width) this.x = 0;
-                if (this.y < 0) this.y = height;
-                if (this.y > height) this.y = 0;
-            }
-            
-            draw() {
-                ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(this.alpha)})`;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        class Particle {
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.vx = (Math.random() - 0.5) * 0.5; 
-                this.vy = (Math.random() - 0.5) * 0.5;
-                this.size = Math.random() * 2 + 1;
-                this.color = Math.random() > 0.5 ? '#00c6ff' : '#7a00ff';
-                this.friction = 0.96; 
-            }
-
-            update() {
-                // --- WHITE HOLE LOGIC (Push Away) ---
-                // Calculate vector FROM mouse TO particle
-                const dx = this.x - mouse.x;
-                const dy = this.y - mouse.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                const forceDistance = 250; 
-                
-                if (distance < forceDistance) {
-                    const force = (forceDistance - distance) / forceDistance; // Stronger closer to mouse
-                    const angle = Math.atan2(dy, dx);
-                    const pushStrength = 2; // Strong push force
-
-                    this.vx += Math.cos(angle) * force * pushStrength;
-                    this.vy += Math.sin(angle) * force * pushStrength;
-                }
-
-                // Friction to stabilize speed
-                this.vx *= this.friction;
-                this.vy *= this.friction;
-
-                // Min speed check (keep them moving slightly)
-                if(Math.abs(this.vx) < 0.1 && Math.abs(this.vy) < 0.1) {
-                   this.vx += (Math.random() - 0.5) * 0.05;
-                   this.vy += (Math.random() - 0.5) * 0.05;
-                }
-
-                this.x += this.vx;
-                this.y += this.vy;
-
-                // Screen Wrap 
-                if (this.x < 0) this.x = width;
-                if (this.x > width) this.x = 0;
-                if (this.y < 0) this.y = height;
-                if (this.y > height) this.y = 0;
-            }
-
-            draw() {
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-        
-        class Asteroid {
-            constructor() {
-                this.reset();
-            }
-            
-            reset() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.size = Math.random() * 3 + 2;
-                this.vx = (Math.random() - 0.5) * 0.5;
-                this.vy = (Math.random() - 0.5) * 0.5;
-            }
-            
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                
-                // Slight interaction for asteroids too
-                const dx = this.x - mouse.x;
-                const dy = this.y - mouse.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance < 200) {
-                     const angle = Math.atan2(dy, dx);
-                     this.vx += Math.cos(angle) * 0.05;
-                     this.vy += Math.sin(angle) * 0.05;
-                }
-                
-                if (this.x < -50 || this.x > width + 50 || this.y < -50 || this.y > height + 50) {
-                    this.reset();
-                }
-            }
-            
-            draw() {
-                ctx.fillStyle = 'rgba(150, 150, 150, 0.5)';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        function initUniverse() {
-            particles = [];
-            stars = [];
-            asteroids = [];
-            nebulas = [];
-            
-            // INCREASED DENSITY
-            
-            // 8 Nebulas (Background)
-            for (let i = 0; i < 8; i++) {
-                nebulas.push(new Nebula());
-            }
-
-            // 600 Stars (Significantly more!)
-            for (let i = 0; i < 600; i++) {
-                stars.push(new Star());
-            }
-            
-            // 150 Particles (More constellations)
-            for (let i = 0; i < 150; i++) {
-                particles.push(new Particle());
-            }
-            
-            // 30 Asteroids
-            for (let i = 0; i < 30; i++) {
-                asteroids.push(new Asteroid());
-            }
-        }
-
-        function animate() {
-            ctx.clearRect(0, 0, width, height);
-            
-            // Draw Nebulas
-            nebulas.forEach(n => {
-                n.update();
-                n.draw();
-            });
-
-            // Draw Stars
-            stars.forEach(star => {
-                star.update();
-                star.draw();
-            });
-            
-            // Draw Asteroids
-            asteroids.forEach(asteroid => {
-                asteroid.update();
-                asteroid.draw();
-            });
-
-            // Draw Particles
-            ctx.lineWidth = 0.5;
-            for (let i = 0; i < particles.length; i++) {
-                let p = particles[i];
-                p.update();
-                p.draw();
-                
-                // Draw lines to nearby particles
-                for (let j = i; j < particles.length; j++) {
-                    const p2 = particles[j];
-                    const dx = p.x - p2.x;
-                    const dy = p.y - p2.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (distance < 100) {
-                        ctx.strokeStyle = `rgba(100, 100, 255, ${0.15 * (1 - distance/100)})`;
-                        ctx.beginPath();
-                        ctx.moveTo(p.x, p.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.stroke();
-                    }
-                }
-            }
-
-            requestAnimationFrame(animate);
-        }
-
-        resize();
-        animate();
-
-    </script>
 </body>
 </html>
