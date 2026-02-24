@@ -3,333 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steve dih</title>
+    <title>Research Articles</title>
     <link rel="icon" href="https://i.postimg.cc/wvy7YZX0/stevehanlogored.png" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
-        /* --- CORE SETTINGS --- */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-
-        :root {
-            --primary-glow: 0, 198, 255;
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --glass-highlight: rgba(255, 255, 255, 0.2);
-            --text-color: #ffffff;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
         body {
-            font-family: 'Inter', sans-serif;
-            background: radial-gradient(circle at center, #0b0b15 0%, #000000 100%);
-            color: var(--text-color);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow-x: hidden;
-            position: relative;
+            font-family: 'Roboto', sans-serif;
+            color: #222;
+            line-height: 1.4;
         }
-
-        /* --- HEADER SECTION --- */
-        header {
-            text-align: center;
-            margin-top: 80px;
-            margin-bottom: 40px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 10;
-        }
-
-        h1 {
-            font-weight: 800;
-            font-size: 4rem;
+        .serif-logo {
+            font-family: 'Libre+Baskerville', serif;
             letter-spacing: -2px;
-            background: linear-gradient(to right, #fff, #a5a5a5);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 15px;
-            text-shadow: 0 0 30px rgba(255,255,255,0.1);
-            min-height: 1.2em;
-            display: inline-block;
-            
-        }
-
-        p.subtitle {
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.6);
-            font-weight: 300;
-            margin-bottom: 30px;
-
-        }
-
-        /* --- ENHANCED GLASS SEARCH BAR --- */
-        .search-container {
-            position: relative;
-            width: 100%;
-            max-width: 600px;
-            margin-bottom: 40px;
-            z-index: 20;
-        }
-
-        .search-bar {
-            width: 100%;
-            padding: 18px 25px;
-            padding-left: 25px;
-            font-size: 1.1rem;
-            color: white;
-            /* Deeper glass effect */
-            background: rgba(20, 20, 25, 0.4); 
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-top: 1px solid rgba(255, 255, 255, 0.3); /* Top highlight */
-            border-radius: 16px; /* Slightly squarer for modern look */
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            outline: none;
-            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-            box-shadow: 
-                0 4px 30px rgba(0, 0, 0, 0.3),
-                inset 0 0 20px rgba(255, 255, 255, 0.02);
-        }
-
-        .search-bar::placeholder {
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .search-bar:focus {
-            background: rgba(30, 30, 40, 0.6);
-            border-color: rgba(0, 198, 255, 0.5);
-            box-shadow: 
-                0 10px 40px rgba(0, 0, 0, 0.5),
-                0 0 30px rgba(0, 198, 255, 0.15),
-                inset 0 0 20px rgba(255, 255, 255, 0.05);
-            transform: translateY(-2px) scale(1.01);
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 22px;
-            height: 22px;
-            pointer-events: none;
-            opacity: 0.6;
-            transition: opacity 0.3s;
-        }
-
-        .search-bar:focus + .search-icon {
-            opacity: 1;
-            color: #00c6ff;
-        }
-        
-        .search-icon circle, .search-icon line {
-            stroke: currentColor;
-            stroke-width: 2;
-        }
-
-        /* --- GRID CONTAINER --- */
-        .container {
-            width: 90%;
-            max-width: 1600px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 30px;
-            padding-bottom: 60px;
-            z-index: 10;
-        }
-
-        /* --- ENHANCED GLASS CARDS --- */
-        .card {
-            background: linear-gradient(
-                135deg,
-                rgba(255, 255, 255, 0.05) 0%,
-                rgba(255, 255, 255, 0.01) 100%
-            );
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-top: 1px solid rgba(255, 255, 255, 0.2); /* Lighting from top */
-            border-left: 1px solid rgba(255, 255, 255, 0.15); /* Lighting from left */
-            border-radius: 24px;
-            padding: 24px;
-            backdrop-filter: blur(25px); /* Stronger blur */
-            -webkit-backdrop-filter: blur(25px);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-            min-height: 250px; 
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-        }
-
-        .card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 
-                0 20px 50px rgba(0, 0, 0, 0.5), 
-                0 0 30px rgba(var(--primary-glow), 0.1),
-                inset 0 0 20px rgba(255, 255, 255, 0.05); /* Inner glow on hover */
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .card-image {
-            width: 100%;
-            height: 140px;
-            border-radius: 16px;
-            object-fit: cover;
-            margin-bottom: 20px;
-            mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
-            transition: transform 0.6s ease;
-            z-index: 2;
-        }
-
-        .card:hover .card-image {
-            transform: scale(1.08);
-        }
-
-        .card h2 {
-            font-size: 1.6rem;
-            margin-bottom: 15px;
             font-weight: 700;
-            color: #fff;
-            padding-left: 10px;
-            border-left: 3px solid #00c6ff;
-            line-height: 1;
-            z-index: 2;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
-
-        .link-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            z-index: 2;
+        .serif-heading {
+            font-family: 'Libre+Baskerville', serif;
         }
-
-        /* --- LINK STYLES (Clean, No Shimmer) --- */
-        .link-list li a {
-            display: block;
-            text-decoration: none;
-            color: rgba(255, 255, 255, 0.8);
-            background: rgba(255, 255, 255, 0.03);
-            min-height: 50px; 
-            padding: 12px 18px;
-            border-radius: 12px;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            border: 1px solid transparent;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: relative;
+        .article-title {
+            font-family: 'Libre+Baskerville', serif;
+            font-weight: 700;
+            line-height: 1.2;
         }
-
-        .link-list li a:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: #fff;
-            padding-left: 22px;
-            border-color: rgba(255, 255, 255, 0.3);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            transform: translateX(2px);
+        /* Specific Songti style for the Chinese article */
+        .songti-title {
+            font-family: "SimSun", "STSong", "Songti SC", serif;
+            font-weight: 700;
+            line-height: 1.2;
         }
-
-        .link-list li a::after {
-            content: '→';
-            opacity: 0;
-            transition: opacity 0.2s;
+        .nature-border {
+            border-bottom: 3px solid #000;
         }
-
-        .link-list li a:hover::after {
-            opacity: 1;
+        .filter-bg {
+            background-color: #f3f3f3;
         }
-        
-
-        @media (max-width: 768px) {
-            h1 { font-size: 2.5rem; }
-            .container { grid-template-columns: 1fr; }
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.7rem center;
+            background-size: 1em;
         }
     </style>
 </head>
-<body>
+<body class="bg-white">
 
-    <header>
-        <!-- Static text without typing effect -->
-        <h1>Welcome Back, Steve</h1>
-        <p class="subtitle">Please look for what you need:</p>
-        
-        <!-- Glass Search Bar -->
-        <div class="search-container">
-            <form action="https://www.google.com/search" method="GET" target="_blank">
-                <input type="text" name="q" class="search-bar" placeholder="Search Google" autocomplete="off">
-            </form>
+    <!-- Header Section -->
+    <header class="max-w-7xl mx-auto px-4 pt-3">
+        <div class="nature-border pb-1 mb-3">
+            <h1 class="serif-logo text-4xl lowercase leading-none">rubbish</h1>
         </div>
+        
+        <nav class="text-[13px] text-gray-600 mb-3 flex items-center space-x-2">
+            <a href="#" class="hover:underline">rubbish</a>
+            <span>&rsaquo;</span>
+            <a href="#" class="hover:underline">research articles</a>
+        </nav>
+
+        <h2 class="serif-heading text-3xl font-bold mb-5">Research articles</h2>
     </header>
 
-    <div class="container">
-
-        <!-- PHYSICS BOX -->
-        <div class="card interactive-card">
-            
-            <h2>Physics & Math</h2>
-            <ul class="link-list">
-                <li><a href="https://drive.google.com/file/d/1-enoONF2EQzFQfPK-A67MTC4HoE0qQr5/view" target="_blank">Physics 12 Formula Sheet</a></li>
-                <li><a href="https://apcentral.collegeboard.org/media/pdf/physics-cm-equations-sheet-2020.pdf" target="_blank">Physics C Formula Sheet</a></li>
-                <li><a href="https://apcentral.collegeboard.org/media/pdf/ap-physics-1-equations-sheet.pdf" target="_blank">Physics 1 Formula Sheet</a></li>
-                <li><a href="https://sites.google.com/apcourses.ca/gowephysicsc/home" target="_blank">Gowe's Site</a></li>
-                <li><a href="https://commons.libretexts.org/book/phys-1989" target="_blank">Physics Textbook</a></li>
-                <li><a href="https://hunkim.com/bc-math/calculus-12/" target="_blank">Hunkim Math</a></li>
-            </ul>
+    <!-- Filters Section (Contained) -->
+    <section class="max-w-7xl mx-auto px-4 mb-6">
+        <div class="filter-bg py-4 px-4 flex flex-col md:flex-row gap-4">
+            <div class="flex-1">
+                <label class="block text-[13px] font-bold mb-1">Article Type</label>
+                <select class="w-full p-1.5 text-sm border border-gray-300 bg-white focus:outline-none">
+                    <option>All</option>
+                    <option>Research Article</option>
+                    <option>Review</option>
+                </select>
+            </div>
+            <div class="flex-1">
+                <label class="block text-[13px] font-bold mb-1">Year</label>
+                <select class="w-full p-1.5 text-sm border border-gray-300 bg-white focus:outline-none">
+                    <option>All</option>
+                    <option>2026</option>
+                    <option>2025</option>
+                </select>
+            </div>
+            <div class="flex-[3]"></div>
         </div>
+    </section>
+
+    <!-- Articles Feed -->
+    <main class="max-w-7xl mx-auto px-4 space-y-4 mb-12">
         
-        <div class="card interactive-card">
-            <h2>Study</h2>
-            <ul class="link-list">
-                <li><a href="https://www.studenttranscripts.gov.bc.ca/dash/dashboard/dashboard.jsf" target="_blank">BC Transcript</a></li>
-                <li><a href="https://search.onlinelearningbc.com/" target="_blank">BC Course Finder</a></li>
-                <li><a href="https://www.revisionvillage.com/" target="_blank">Revision Village</a></li>
-                <li><a href="https://satsuitequestionbank.collegeboard.org/digital/search" target="_blank">SAT刷题</a></li>
-                <li><a href="https://maa.edvistas.com/datamate/studentlogin.aspx" target="_blank">MAA Portal</a></li>
-                <li><a href="https://cemc.uwaterloo.ca/resources/past-contests" target="_blank">CEMC Portal</a></li>
-                <li><a href="https://usaco.org/" target="_blank">USACO Portal</a></li>
-            </ul>
-        </div>
-        
-        <!-- CONTENT CREATION BOX -->
-        <div class="card interactive-card">
-            <h2>Creative</h2>
-            <ul class="link-list">
-                <li><a href="https://channels.weixin.qq.com/" target="_blank">视频号助手</a></li>
-                <li><a href="https://creator.douyin.com/creator-micro/content/upload" target="_blank">抖音创作者中心</a></li>
-                <li><a href="https://sticker.weixin.qq.com/" target="_blank">微信表情开放平台</a></li>
-                <li><a href="https://dlpanda.com/zh-CN?" target="_blank">抖音下载器</a></li>
-                <li><a href="https://yt5s.rip/en11/" target="_blank">YouTube下载器</a></li>
-                <li><a href="https://filehelper.weixin.qq.com/" target="_blank">文件传输助手网页版</a></li>
-                <li><a href="https://postimages.org/" target="_blank">Image Hoster</a></li>
-            </ul>
-        </div>
+        <!-- Genshin Impact Article (Chinese only, Songti, with Image) -->
+        <article class="flex flex-col md:flex-row border-t border-gray-200 pt-3 gap-4">
+            <div class="w-32 flex-shrink-0">
+                <p class="serif-heading text-[16px] font-bold">Article</p>
+                <p class="text-[12px] text-orange-700 font-bold italic">Trending</p>
+                <p class="text-[12px] text-gray-500">23 Feb 2026</p>
+            </div>
+            <div class="flex-grow flex flex-col md:flex-row gap-4">
+                <div class="flex-1">
+                    <a href="genshin/" class="songti-title text-[20px] hover:underline block mb-1">
+                    不玩原神的一生是失败的一生
+                    </a>
+                    <p class="text-[13px] text-gray-600 mb-2">探讨开放世界冒险游戏《原神》对当代青年精神世界的深远影响及社交媒介中的文化重构。</p>
+                    <p class="text-[13px] text-gray-700">Muye Han, Joseph Stalin ... Donald J. Trump</p>
+                </div>
+                <div class="w-full md:w-52 h-32 flex-shrink-0">
+                    <img src="https://i.postimg.cc/XYfKsjnP/genshin.jpg" alt="Genshin Impact" class="w-full h-full object-cover border border-gray-300">
+                </div>
+            </div>
+        </article>
 
-        <!-- MATH BOX -->
-        <div class="card interactive-card">
-            <h2>AI</h2>
-            <ul class="link-list">
-                <li><a href="https://gemini.google.com/app" target="_blank">Gemini</a></li>
-                <li><a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a></li>
-                <li><a href="https://grok.com/" target="_blank">Grok</a></li>
-                <li><a href="https://claude.ai/" target="_blank">Claude</a></li>
-                <li><a href="https://chat.deepseek.com/" target="_blank">DeepSeek</a></li>
-                <li><a href="https://www.doubao.com/chat/" target="_blank">豆包</a></li>
-                <li><a href="https://chat.qwen.ai/" target="_blank">通义千问</a></li>
-            </ul>
-        </div>
+        <!-- Article 1 -->
+        <article class="flex flex-col md:flex-row border-t border-gray-200 pt-3 gap-4">
+            <div class="w-32 flex-shrink-0">
+                <p class="serif-heading text-[16px] font-bold">Article</p>
+                <p class="text-[12px] text-gray-500">23 Feb 2026</p>
+            </div>
+            <div class="flex-grow">
+                <a href="article-details.html" class="article-title text-[20px] hover:underline block mb-1">
+                    Markovnikov hydroamination of terminal alkenes via phosphine redox catalysis
+                </a>
+                <p class="text-[13px] text-gray-700">Flora Fan, Kassandra F. Sedillo ... Abigail G. Doyle</p>
+            </div>
+        </article>
 
-    </div>
+        <!-- Article 2 -->
+        <article class="flex flex-col md:flex-row border-t border-gray-200 pt-3 gap-4">
+            <div class="w-32 flex-shrink-0">
+                <p class="serif-heading text-[16px] font-bold">Article</p>
+                <p class="text-[12px] text-gray-500">19 Feb 2026</p>
+            </div>
+            <div class="flex-grow">
+                <a href="article-details.html" class="article-title text-[20px] hover:underline block mb-1">
+                    Host control of persistent Epstein–Barr virus infection
+                </a>
+                <p class="text-[13px] text-gray-700">Axel Schmidt, T. Madhusankha Alawathurage ... Kerstin U. Ludwig</p>
+            </div>
+        </article>
+
+        <!-- Article 3 -->
+        <article class="flex flex-col md:flex-row border-t border-gray-200 pt-3 gap-4">
+            <div class="w-32 flex-shrink-0">
+                <p class="serif-heading text-[16px] font-bold">Article</p>
+                <p class="text-[12px] text-gray-500">18 Feb 2026</p>
+            </div>
+            <div class="flex-grow">
+                <a href="article-details.html" class="article-title text-[20px] hover:underline block mb-1">
+                    Stereospecific alkyl–alkyl cross-coupling of boronic esters
+                </a>
+                <p class="text-[13px] text-gray-700">Xieyang Zhang, Kyle T. Palka ... James P. Morken</p>
+            </div>
+        </article>
+
+        <!-- Article with Image -->
+        <article class="flex flex-col md:flex-row border-t border-gray-200 pt-3 gap-4">
+            <div class="w-32 flex-shrink-0">
+                <p class="serif-heading text-[16px] font-bold">Article</p>
+                <p class="text-[12px] text-gray-500">18 Feb 2026</p>
+            </div>
+            <div class="flex-grow flex flex-col md:flex-row gap-4">
+                <div class="flex-1">
+                    <a href="article-details.html" class="article-title text-[20px] hover:underline block mb-1">
+                        Giant energy storage and dielectric performance in all-polymer nanocomposites
+                    </a>
+                    <p class="text-[13px] text-gray-600 mb-2">A high-temperature immiscible blend of two dipolar polymers that self-assemble into three-dimensional all-polymer nanocomposites allows markedly enhanced dielectric and energy storage performances over a broad temperature range.</p>
+                    <p class="text-[13px] text-gray-700">Li Li, Guanchun Rui ... Q. M. Zhang</p>
+                </div>
+                <div class="w-full md:w-52 h-32 bg-gray-200 flex items-center justify-center border border-gray-300 flex-shrink-0">
+                    <img src="https://media.springernature.com/w165h90/springer-static/image/art%3A10.1038%2Fs41586-026-10195-2/MediaObjects/41586_2026_10195_Fig1_HTML.png?as=webp 160w" alt="Genshin Impact" class="w-full h-full object-cover border border-gray-300">
+                </div>
+            </div>
+        </article>
+
+        <!-- Article Open Access -->
+        <article class="flex flex-col md:flex-row border-t border-gray-200 pt-3 gap-4">
+            <div class="w-32 flex-shrink-0">
+                <p class="serif-heading text-[16px] font-bold">Article</p>
+                <p class="text-[12px] text-orange-700 font-bold italic">Open Access</p>
+                <p class="text-[12px] text-gray-500">18 Feb 2026</p>
+            </div>
+            <div class="flex-grow flex flex-col md:flex-row gap-4">
+                <div class="flex-1">
+                    <a href="article-details.html" class="article-title text-[20px] hover:underline block mb-1">
+                        Rising atmospheric CO₂ reduces nitrogen availability in boreal forests
+                    </a>
+                    <p class="text-[13px] text-gray-600 mb-2">Nitrogen isotope tree-ring chronologies show that rising atmospheric CO₂ has reduced nitrogen availability in boreal forests in Sweden.</p>
+                    <p class="text-[13px] text-gray-700">Kelley B. Bassett, Stefan F. Hupperts ... Michael J. Gundale</p>
+                </div>
+                <div class="w-full md:w-52 h-32 bg-gray-100 flex items-center justify-center border border-gray-300 flex-shrink-0">
+                    <img src="https://media.springernature.com/w290h158/springer-static/image/art%3A10.1038%2Fs41586-025-10039-5/MediaObjects/41586_2025_10039_Fig1_HTML.png" alt="Genshin Impact" class="w-full h-full object-cover border border-gray-300">
+                </div>
+            </div>
+        </article>
+
+    </main>
+
+    <footer class="border-t py-8 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+            <span class="serif-logo text-2xl lowercase opacity-50">rubbish</span>
+            <div class="text-[11px] text-gray-400">© 2026 Rubbish Journal Limited. All rights reserved.</div>
+        </div>
+    </footer>
 
 </body>
 </html>
