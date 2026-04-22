@@ -1,207 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Research Articles</title>
-    <link rel="icon" href="https://i.postimg.cc/wvy7YZX0/stevehanlogored.png" type="image/png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            color: #222;
-            line-height: 1.4;
-        }
-        .serif-logo {
-            font-family: 'Libre+Baskerville', serif;
-            letter-spacing: -2px;
-            font-weight: 700;
-        }
-        .serif-heading {
-            font-family: 'Libre+Baskerville', serif;
-        }
-        .article-title {
-            font-family: 'Libre+Baskerville', serif;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-        /* Specific Songti style for the Chinese article */
-        .songti-title {
-            font-family: "SimSun", "STSong", "Songti SC", serif;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-        .nature-border {
-            border-bottom: 3px solid #000;
-        }
-        .filter-bg {
-            background-color: #f3f3f3;
-        }
-        select {
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 0.7rem center;
-            background-size: 1em;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Math Tutoring</title>
+  <link rel="icon" href="https://i.postimg.cc/wvy7YZX0/stevehanlogored.png" type="image/png">
+  <style>
+    :root {
+      --bg-top: #f7f8fc;
+      --bg-bottom: #e9eef7;
+      --text: #111111;
+      --muted: #6e6e73;
+      --card: rgba(255, 255, 255, 0.72);
+      --border: rgba(255, 255, 255, 0.82);
+      --shadow: 0 24px 60px rgba(17, 17, 17, 0.08);
+      --hero-size: clamp(2.4rem, 5vw, 5.2rem);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+      overflow-x: hidden;
+    }
+
+    .page {
+      width: min(1200px, calc(100% - 32px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 40px 0 28px;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 48px 0 64px;
+    }
+
+    .hero-title {
+      margin: 0;
+      font-size: 3rem;
+      line-height: 1.04;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+
+    .hero-subtitle {
+      margin-top: 10px;
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .calendly-shell {
+      border-radius: 36px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .calendly-inline-widget {
+      height: 640px;
+    }
+
+    @media (max-width: 900px) {
+      .page {
+        width: min(100% - 20px, 1200px);
+        min-height: 100vh;
+        padding: 24px 0 20px;
+      }
+
+      .hero {
+        padding: 18px 0 26px;
+      }
+
+      .hero-title {
+        white-space: normal;
+        font-size: clamp(2.1rem, 9vw, 4rem);
+        line-height: 1.08;
+      }
+
+      .hero-subtitle {
+        font-size: 1rem;
+        margin-top: 14px;
+      }
+
+      .calendly-shell {
+        width: 100%;
+        border-radius: 14px;
+      }
+
+      .calendly-inline-widget {
+        width: 100%;
+        height: 700px;
+        min-width: 0;
+      }
+    }
+  </style>
 </head>
-<body class="bg-white">
-
-    <!-- Header Section -->
-    <header class="max-w-7xl mx-auto px-4 pt-3">
-        <div class="nature-border pb-1 mb-3">
-            <h1 class="serif-logo text-4xl lowercase leading-none">rubbish</h1>
-        </div>
-        
-        <nav class="text-[13px] text-gray-600 mb-3 flex items-center space-x-2">
-            <a href="#" class="hover:underline">rubbish</a>
-            <span>&rsaquo;</span>
-            <a href="#" class="hover:underline">research articles</a>
-        </nav>
-
-        <h2 class="serif-heading text-3xl font-bold mb-5">Research articles (Yes I'm Steve this is my goofy website that I'm changing soon)</h2>
-    </header>
-
-    <!-- Filters Section (Contained) -->
-    <section class="max-w-7xl mx-auto px-4 mb-6">
-        <div class="filter-bg py-4 px-4 flex flex-col md:flex-row gap-4">
-            <div class="flex-1">
-                <label class="block text-[13px] font-bold mb-1">Article Type</label>
-                <select class="w-full p-1.5 text-sm border border-gray-300 bg-white focus:outline-none">
-                    <option>All</option>
-                    <option>Research Article</option>
-                    <option>Review</option>
-                </select>
-            </div>
-            <div class="flex-1">
-                <label class="block text-[13px] font-bold mb-1">Year</label>
-                <select class="w-full p-1.5 text-sm border border-gray-300 bg-white focus:outline-none">
-                    <option>All</option>
-                    <option>2026</option>
-                    <option>2025</option>
-                </select>
-            </div>
-            <div class="flex-[3]"></div>
-        </div>
+<body>
+  <div class="page">
+    <section class="hero">
+      <h1 class="hero-title">Semiahmoo's Best Tutor</h1>
+      <div class="hero-subtitle">Your future self will thank you now.</div>
     </section>
 
-    <!-- Articles Feed -->
-    <main class="max-w-7xl mx-auto px-4 space-y-4 mb-12">
-        
-        <!-- Genshin Impact Article (Chinese only, Songti, with Image) -->
-        <article class="flex flex-col md:flex-row border-t border-gray-200 pt-3 gap-4">
-            <div class="w-32 flex-shrink-0">
-                <p class="serif-heading text-[16px] font-bold">Article</p>
-                <p class="text-[12px] text-orange-700 font-bold italic">Trending</p>
-                <p class="text-[12px] text-gray-500">23 Feb 2026</p>
-            </div>
-            <div class="flex-grow flex flex-col md:flex-row gap-4">
-                <div class="flex-1">
-                    <a href="genshin/" class="songti-title text-[20px] hover:underline block mb-1">
-                    不玩原神的一生是失败的一生
-                    </a>
-                    <p class="text-[13px] text-gray-600 mb-2">探讨开放世界冒险游戏《原神》对当代青年精神世界的深远影响及社交媒介中的文化重构。</p>
-                    <p class="text-[13px] text-gray-700">Muye Han, Joseph Stalin ... Donald J. Trump</p>
-                </div>
-                <div class="w-full md:w-52 h-32 flex-shrink-0">
-                    <img src="https://i.postimg.cc/XYfKsjnP/genshin.jpg" alt="Genshin Impact" class="w-full h-full object-cover border border-gray-300">
-                </div>
-            </div>
-        </article>
+    <section class="calendly-shell">
+      <div
+        class="calendly-inline-widget"
+        data-url="https://calendly.com/stevehan926/1hr?hide_gdpr_banner=1"
+      ></div>
+    </section>
+  </div>
 
-        <!-- Article 1 -->
-        <article class="flex flex-col md:flex-row border-t border-gray-200 pt-3 gap-4">
-            <div class="w-32 flex-shrink-0">
-                <p class="serif-heading text-[16px] font-bold">Article</p>
-                <p class="text-[12px] text-gray-500">23 Feb 2026</p>
-            </div>
-            <div class="flex-grow">
-                <a href="article-details.html" class="article-title text-[20px] hover:underline block mb-1">
-                    Markovnikov hydroamination of terminal alkenes via phosphine redox catalysis
-                </a>
-                <p class="text-[13px] text-gray-700">Flora Fan, Kassandra F. Sedillo ... Abigail G. Doyle</p>
-            </div>
-        </article>
-
-        <!-- Article 2 -->
-        <article class="flex flex-col md:flex-row border-t border-gray-200 pt-3 gap-4">
-            <div class="w-32 flex-shrink-0">
-                <p class="serif-heading text-[16px] font-bold">Article</p>
-                <p class="text-[12px] text-gray-500">19 Feb 2026</p>
-            </div>
-            <div class="flex-grow">
-                <a href="article-details.html" class="article-title text-[20px] hover:underline block mb-1">
-                    Host control of persistent Epstein–Barr virus infection
-                </a>
-                <p class="text-[13px] text-gray-700">Axel Schmidt, T. Madhusankha Alawathurage ... Kerstin U. Ludwig</p>
-            </div>
-        </article>
-
-        <!-- Article 3 -->
-        <article class="flex flex-col md:flex-row border-t border-gray-200 pt-3 gap-4">
-            <div class="w-32 flex-shrink-0">
-                <p class="serif-heading text-[16px] font-bold">Article</p>
-                <p class="text-[12px] text-gray-500">18 Feb 2026</p>
-            </div>
-            <div class="flex-grow">
-                <a href="article-details.html" class="article-title text-[20px] hover:underline block mb-1">
-                    Stereospecific alkyl–alkyl cross-coupling of boronic esters
-                </a>
-                <p class="text-[13px] text-gray-700">Xieyang Zhang, Kyle T. Palka ... James P. Morken</p>
-            </div>
-        </article>
-
-        <!-- Article with Image -->
-        <article class="flex flex-col md:flex-row border-t border-gray-200 pt-3 gap-4">
-            <div class="w-32 flex-shrink-0">
-                <p class="serif-heading text-[16px] font-bold">Article</p>
-                <p class="text-[12px] text-gray-500">18 Feb 2026</p>
-            </div>
-            <div class="flex-grow flex flex-col md:flex-row gap-4">
-                <div class="flex-1">
-                    <a href="article-details.html" class="article-title text-[20px] hover:underline block mb-1">
-                        Giant energy storage and dielectric performance in all-polymer nanocomposites
-                    </a>
-                    <p class="text-[13px] text-gray-600 mb-2">A high-temperature immiscible blend of two dipolar polymers that self-assemble into three-dimensional all-polymer nanocomposites allows markedly enhanced dielectric and energy storage performances over a broad temperature range.</p>
-                    <p class="text-[13px] text-gray-700">Li Li, Guanchun Rui ... Q. M. Zhang</p>
-                </div>
-                <div class="w-full md:w-52 h-32 bg-gray-200 flex items-center justify-center border border-gray-300 flex-shrink-0">
-                    <img src="https://media.springernature.com/w165h90/springer-static/image/art%3A10.1038%2Fs41586-026-10195-2/MediaObjects/41586_2026_10195_Fig1_HTML.png?as=webp 160w" alt="Genshin Impact" class="w-full h-full object-cover border border-gray-300">
-                </div>
-            </div>
-        </article>
-
-        <!-- Article Open Access -->
-        <article class="flex flex-col md:flex-row border-t border-gray-200 pt-3 gap-4">
-            <div class="w-32 flex-shrink-0">
-                <p class="serif-heading text-[16px] font-bold">Article</p>
-                <p class="text-[12px] text-orange-700 font-bold italic">Open Access</p>
-                <p class="text-[12px] text-gray-500">18 Feb 2026</p>
-            </div>
-            <div class="flex-grow flex flex-col md:flex-row gap-4">
-                <div class="flex-1">
-                    <a href="article-details.html" class="article-title text-[20px] hover:underline block mb-1">
-                        Rising atmospheric CO₂ reduces nitrogen availability in boreal forests
-                    </a>
-                    <p class="text-[13px] text-gray-600 mb-2">Nitrogen isotope tree-ring chronologies show that rising atmospheric CO₂ has reduced nitrogen availability in boreal forests in Sweden.</p>
-                    <p class="text-[13px] text-gray-700">Kelley B. Bassett, Stefan F. Hupperts ... Michael J. Gundale</p>
-                </div>
-                <div class="w-full md:w-52 h-32 bg-gray-100 flex items-center justify-center border border-gray-300 flex-shrink-0">
-                    <img src="https://media.springernature.com/w290h158/springer-static/image/art%3A10.1038%2Fs41586-025-10039-5/MediaObjects/41586_2025_10039_Fig1_HTML.png" alt="Genshin Impact" class="w-full h-full object-cover border border-gray-300">
-                </div>
-            </div>
-        </article>
-
-    </main>
-
-    <footer class="border-t py-8 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
-            <span class="serif-logo text-2xl lowercase opacity-50">rubbish</span>
-            <div class="text-[11px] text-gray-400">© 2026 Rubbish Journal Limited. All rights reserved.</div>
-        </div>
-    </footer>
-
+  <script
+    src="https://assets.calendly.com/assets/external/widget.js"
+    async
+  ></script>
 </body>
 </html>
