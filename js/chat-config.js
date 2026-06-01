@@ -1,0 +1,1 @@
+window.STEVEGPT_API_ENDPOINT = "";
