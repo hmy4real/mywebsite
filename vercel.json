@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/capstone",
+      "destination": "/capstone/index.html"
+    }
+  ]
+}
