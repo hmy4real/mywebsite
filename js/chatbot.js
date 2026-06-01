@@ -1,8 +1,12 @@
-const CHAT_API_ENDPOINT = "";
+const CHAT_API_ENDPOINT = "/api/chat";
 
 const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
 const chatMessages = document.getElementById("chatMessages");
+const chatStatus = document.querySelector(".chat-status");
+const submitButton = chatForm.querySelector("button");
+
+const conversation = [];
 
 const localReplies = [
   {
@@ -61,7 +65,10 @@ async function getBotReply(message) {
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ message })
+    body: JSON.stringify({
+      message,
+      messages: conversation
+    })
   });
 
   if (!response.ok) {
@@ -81,7 +88,11 @@ chatForm.addEventListener("submit", async (event) => {
   }
 
   chatInput.value = "";
+  chatInput.disabled = true;
+  submitButton.disabled = true;
+  chatStatus.textContent = "Thinking...";
   addMessage(message, "user");
+  conversation.push({ role: "user", content: message });
 
   const typingMessage = addMessage("SteveGPT is thinking...", "bot", "typing");
 
@@ -89,8 +100,16 @@ chatForm.addEventListener("submit", async (event) => {
     const reply = await getBotReply(message);
     typingMessage.remove();
     addMessage(reply, "bot");
+    conversation.push({ role: "assistant", content: reply });
   } catch {
     typingMessage.remove();
-    addMessage("I could not reach the AI service right now, but I am still here locally.", "bot");
+    const localReply = getLocalReply(message);
+    addMessage(localReply, "bot");
+    conversation.push({ role: "assistant", content: localReply });
+  } finally {
+    chatInput.disabled = false;
+    submitButton.disabled = false;
+    chatStatus.textContent = "Ready to chat";
+    chatInput.focus();
   }
 });
