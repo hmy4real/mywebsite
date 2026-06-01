@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SteveGPT</title>
   <link rel="stylesheet" href="../css/styles.css" />
+  <script src="../js/chatbot.js" defer></script>
 </head>
 
 <body>
@@ -24,6 +25,27 @@
         <div class="hero-copy">
           <h1 class="hero-title"><span class="fill">Hello, I'm SteveGPT</span></h1>
           <div class="hero-subtitle">I am Steve's capstone product</div>
+
+          <section class="chat-shell" aria-label="SteveGPT chat">
+            <div class="chat-header">
+              <div>
+                <div class="chat-name">SteveGPT</div>
+                <div class="chat-status">Ready to chat</div>
+              </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages" aria-live="polite">
+              <div class="chat-message bot">
+                <div class="chat-bubble">Hi, I am SteveGPT. Ask me anything about this capstone demo.</div>
+              </div>
+            </div>
+
+            <form class="chat-form" id="chatForm">
+              <label class="sr-only" for="chatInput">Message SteveGPT</label>
+              <input id="chatInput" name="message" type="text" autocomplete="off" placeholder="Talk to SteveGPT" />
+              <button type="submit">Send</button>
+            </form>
+          </section>
         </div>
       </div>
     </section>
