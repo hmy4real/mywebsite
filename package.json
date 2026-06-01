@@ -1,0 +1,12 @@
+{
+  "name": "stevegpt-capstone",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SteveGPT capstone chatbot site.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
