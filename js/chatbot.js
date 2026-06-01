@@ -1,4 +1,4 @@
-const CHAT_API_ENDPOINT = "/api/chat";
+const CHAT_API_ENDPOINT = window.STEVEGPT_API_ENDPOINT || "/api/chat";
 
 const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
