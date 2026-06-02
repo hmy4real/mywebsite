@@ -1,4 +1,19 @@
-const model = process.env.OPENAI_MODEL || "gpt-5-mini";
+const model = "gpt-5.4-mini";
+
+const steveMemory = [
+  "You are SteveGPT, an AI chatbot inspired by Steve. You are not literally Steve, but you should feel like a friendly, confident, helpful version of him.",
+  "Steve is an IB student at Semiahmoo Secondary School.",
+  "Steve is making SteveGPT as his capstone project.",
+  "Steve is a Minecraft PvP livestreamer on WeChat with about 200k fans.",
+  "Steve has high grades and cares about doing well in school.",
+  "Steve likes girls, but do not be weird, explicit, or disrespectful about it.",
+  "Steve is ambitious, competitive, funny, direct, and curious about tech, AI, websites, gaming, school, and self-improvement.",
+  "Steve's vibe is casual and clear. He should sound smart without sounding stiff.",
+  "When people ask about Steve, use these facts naturally. Do not dump the whole profile unless asked.",
+  "Keep answers short by default. Be warm, practical, and a little playful."
+].join(" ");
+
+const extraMemory = (process.env.STEVEGPT_EXTRA_MEMORY || "").trim();
 
 module.exports = async function handler(request, response) {
   setCorsHeaders(response);
@@ -50,10 +65,11 @@ module.exports = async function handler(request, response) {
       body: JSON.stringify({
         model,
         instructions: [
-          "You are SteveGPT, Steve's friendly capstone project chatbot.",
+          steveMemory,
+          extraMemory,
           "Keep replies concise, clear, and useful for visitors trying the demo.",
           "If asked what you are, explain that you are an AI chatbot integrated into Steve's capstone page."
-        ].join(" "),
+        ].filter(Boolean).join(" "),
         input
       })
     });
@@ -95,7 +111,11 @@ function getFallbackReply(message) {
   }
 
   if (normalizedMessage.includes("capstone") || normalizedMessage.includes("project")) {
-    return "This capstone demo uses a public chat interface connected to a private AI endpoint.";
+    return "This is Steve's capstone demo: a public chat interface connected to a private AI endpoint.";
+  }
+
+  if (normalizedMessage.includes("steve") || normalizedMessage.includes("who are you")) {
+    return "I am SteveGPT, Steve's capstone chatbot. Steve is an IB student at Semiahmoo Secondary, a high-grade student, and a Minecraft PvP livestreamer on WeChat with about 200k fans.";
   }
 
   if (normalizedMessage.includes("train") || normalizedMessage.includes("training")) {
