@@ -14,7 +14,7 @@ cp .env.example .env
 
 ```bash
 OPENAI_API_KEY=your_openai_api_key_here
-OPENAI_MODEL=gpt-5-mini
+STEVEGPT_EXTRA_MEMORY=optional_private_extra_details_about_steve
 ```
 
 3. Start the site:
@@ -57,10 +57,14 @@ This repo includes a Vercel serverless endpoint at `api/chat.js`.
 
 ```text
 OPENAI_API_KEY=your_openai_api_key_here
-OPENAI_MODEL=gpt-5-mini
+STEVEGPT_EXTRA_MEMORY=optional_private_extra_details_about_steve
 ```
 
 4. Deploy the project.
+
+SteveGPT uses `gpt-5.4-mini` in `api/chat.js`. The optional `STEVEGPT_EXTRA_MEMORY`
+environment variable lets you add more private Steve-specific memory in Vercel without
+putting it into browser files.
 
 If the whole site is hosted on Vercel, the chatbot uses `/api/chat` automatically.
 
