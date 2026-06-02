@@ -4,6 +4,8 @@ const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
 const chatMessages = document.getElementById("chatMessages");
 const chatStatus = document.querySelector(".chat-status");
+const chatShell = document.querySelector(".chat-shell");
+const chatExpand = document.getElementById("chatExpand");
 const submitButton = chatForm.querySelector("button");
 
 const conversation = [];
@@ -11,19 +13,19 @@ const conversation = [];
 const localReplies = [
   {
     keywords: ["capstone", "project", "demo"],
-    response: "This capstone demo is about making SteveGPT feel simple, friendly, and easy to talk to."
+    response: "its steve's capstone demo lol. basically a public chat page connected to a private ai endpoint."
   },
   {
     keywords: ["steve", "stevegpt", "who"],
-    response: "I am SteveGPT, a small chat assistant made for Steve's capstone page."
+    response: "im SteveGPT. basically a chatbot trying to talk like steve, not a full biography dump."
   },
   {
     keywords: ["hello", "hi", "hey"],
-    response: "Hello. I am here and ready to chat."
+    response: "yo"
   },
   {
     keywords: ["help", "can you"],
-    response: "I can answer questions, explain the demo, and keep the conversation going."
+    response: "yeah np. ask the actual thing tho."
   }
 ];
 
@@ -33,13 +35,74 @@ function addMessage(text, sender, extraClass = "") {
 
   const bubble = document.createElement("div");
   bubble.className = "chat-bubble";
-  bubble.textContent = text;
+
+  if (sender === "bot" && !extraClass.includes("typing")) {
+    bubble.appendChild(formatBotReply(text));
+  } else {
+    bubble.textContent = text;
+  }
 
   message.appendChild(bubble);
   chatMessages.appendChild(message);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 
   return message;
+}
+
+function formatBotReply(text) {
+  const fragment = document.createDocumentFragment();
+  const lines = String(text || "").split(/\n+/).filter((line) => line.trim());
+
+  if (!lines.length) {
+    fragment.appendChild(document.createTextNode(""));
+    return fragment;
+  }
+
+  lines.forEach((line) => {
+    const paragraph = document.createElement("p");
+    renderInlineMarkdown(line.trim(), paragraph);
+    fragment.appendChild(paragraph);
+  });
+
+  return fragment;
+}
+
+function renderInlineMarkdown(text, parent) {
+  const pattern = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^)]+\))/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parent.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+    }
+
+    const token = match[0];
+
+    if (token.startsWith("**")) {
+      const strong = document.createElement("strong");
+      strong.textContent = token.slice(2, -2);
+      parent.appendChild(strong);
+    } else if (token.startsWith("`")) {
+      const code = document.createElement("code");
+      code.textContent = token.slice(1, -1);
+      parent.appendChild(code);
+    } else {
+      const linkMatch = token.match(/^\[([^\]]+)\]\((https?:\/\/[^)]+)\)$/);
+      const link = document.createElement("a");
+      link.textContent = linkMatch[1];
+      link.href = linkMatch[2];
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      parent.appendChild(link);
+    }
+
+    lastIndex = pattern.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    parent.appendChild(document.createTextNode(text.slice(lastIndex)));
+  }
 }
 
 function getLocalReply(message) {
@@ -112,4 +175,11 @@ chatForm.addEventListener("submit", async (event) => {
     chatStatus.textContent = "Ready to chat";
     chatInput.focus();
   }
+});
+
+chatExpand.addEventListener("click", () => {
+  const isExpanded = chatShell.classList.toggle("is-expanded");
+  chatExpand.textContent = isExpanded ? "Small" : "Large";
+  chatExpand.setAttribute("aria-pressed", String(isExpanded));
+  chatMessages.scrollTop = chatMessages.scrollHeight;
 });
