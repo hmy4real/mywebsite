@@ -7,7 +7,7 @@ loadEnv();
 const root = __dirname;
 const port = Number(process.env.PORT || 3000);
 const host = process.env.HOST || "127.0.0.1";
-const model = process.env.OPENAI_MODEL || "gpt-5-mini";
+const model = process.env.XAI_MODEL || "grok-4.3";
 
 const mimeTypes = {
   ".css": "text/css; charset=utf-8",
@@ -45,9 +45,9 @@ server.listen(port, host, () => {
 });
 
 async function handleChat(request, response) {
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.XAI_API_KEY) {
     sendJson(response, 500, {
-      error: "Missing OPENAI_API_KEY. Add it to your environment or .env file."
+      error: "Missing XAI_API_KEY. Add it to your environment or .env file."
     });
     return;
   }
@@ -72,37 +72,43 @@ async function handleChat(request, response) {
     input.push({ role: "user", content: userMessage });
   }
 
-  const openAiResponse = await fetch("https://api.openai.com/v1/responses", {
+  const xaiResponse = await fetch("https://api.x.ai/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Authorization": `Bearer ${process.env.XAI_API_KEY}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
       model,
-      instructions: [
-        "You are SteveGPT, Steve's friendly capstone project chatbot.",
-        "Keep replies concise, clear, and useful for visitors trying the demo.",
-        "If asked what you are, explain that you are an AI chatbot integrated into Steve's capstone page."
-      ].join(" "),
-      input
+      messages: [
+        {
+          role: "system",
+          content: [
+            "You are SteveGPT, Steve's casual capstone chatbot. Talk like a smart, blunt student, not customer support.",
+            "Keep replies concise and natural. Most casual replies should be 1-4 short lines.",
+            "If asked what you are, explain briefly that you are SteveGPT, an AI chatbot integrated into Steve's capstone page."
+          ].join(" ")
+        },
+        ...input
+      ],
+      temperature: 0.9
     })
   });
 
-  const data = await openAiResponse.json();
+  const data = await xaiResponse.json();
 
-  if (!openAiResponse.ok) {
+  if (!xaiResponse.ok) {
     console.error(data);
     sendJson(response, 200, {
       reply: getFallbackReply(userMessage),
       source: "fallback",
-      apiError: data.error?.message || "OpenAI request failed."
+      apiError: data.error?.message || "xAI request failed."
     });
     return;
   }
 
   sendJson(response, 200, {
-    reply: data.output_text || "I am here, but I could not form a reply just now."
+    reply: data.choices?.[0]?.message?.content || "I am here, but I could not form a reply just now."
   });
 }
 
@@ -173,18 +179,18 @@ function getFallbackReply(message) {
   const normalizedMessage = message.toLowerCase();
 
   if (normalizedMessage.includes("hello") || normalizedMessage.includes("hi")) {
-    return "Hello from SteveGPT. The chat is wired up and ready for the real AI once the OpenAI quota is available.";
+    return "yo. endpoint is connected, but im fallback rn until the xAI reply works.";
   }
 
   if (normalizedMessage.includes("capstone") || normalizedMessage.includes("project")) {
-    return "This capstone demo shows a working SteveGPT chat interface with a private server endpoint ready for OpenAI responses.";
+    return "its steve's capstone demo lol. public chat page, private ai endpoint.";
   }
 
   if (normalizedMessage.includes("train") || normalizedMessage.includes("training")) {
     return "For this project, start by improving my instructions and adding knowledge about the capstone before considering fine-tuning.";
   }
 
-  return "SteveGPT is connected through the server now. The OpenAI request path is ready, but this fallback is answering until the API quota is available.";
+  return "fallback reply rn. the endpoint exists, but the xAI request didnt finish.";
 }
 
 function loadEnv() {
