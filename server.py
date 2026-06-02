@@ -43,11 +43,11 @@ class SteveGPTHandler(SimpleHTTPRequestHandler):
             self.send_json(500, {"error": "Something went wrong."})
 
     def handle_chat(self):
-        api_key = os.environ.get("OPENAI_API_KEY")
+        api_key = os.environ.get("XAI_API_KEY")
 
         if not api_key:
             self.send_json(500, {
-                "error": "Missing OPENAI_API_KEY. Add it to your .env file."
+                "error": "Missing XAI_API_KEY. Add it to your .env file."
             })
             return
 
@@ -78,17 +78,24 @@ class SteveGPTHandler(SimpleHTTPRequestHandler):
             input_messages.append({"role": "user", "content": user_message})
 
         payload = {
-            "model": os.environ.get("OPENAI_MODEL", "gpt-5-mini"),
-            "instructions": (
-                "You are SteveGPT, Steve's friendly capstone project chatbot. "
-                "Keep replies concise, clear, and useful for visitors trying the demo. "
-                "If asked what you are, explain that you are an AI chatbot integrated into Steve's capstone page."
-            ),
-            "input": input_messages
+            "model": os.environ.get("XAI_MODEL", "grok-4.3"),
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are SteveGPT, Steve's casual capstone chatbot. "
+                        "Talk like a smart, blunt student, not customer support. "
+                        "Keep replies concise and natural. Most casual replies should be 1-4 short lines. "
+                        "If asked what you are, explain briefly that you are SteveGPT, an AI chatbot integrated into Steve's capstone page."
+                    )
+                },
+                *input_messages
+            ],
+            "temperature": 0.9
         }
 
         request = Request(
-            "https://api.openai.com/v1/responses",
+            "https://api.x.ai/v1/chat/completions",
             data=json.dumps(payload).encode("utf-8"),
             headers={
                 "Authorization": f"Bearer {api_key}",
@@ -102,7 +109,7 @@ class SteveGPTHandler(SimpleHTTPRequestHandler):
                 data = json.loads(response.read().decode("utf-8"))
         except HTTPError as error:
             details = json.loads(error.read().decode("utf-8"))
-            api_error = details.get("error", {}).get("message", "OpenAI request failed.")
+            api_error = details.get("error", {}).get("message", "xAI request failed.")
             print(details)
             self.send_json(200, {
                 "reply": get_fallback_reply(user_message),
@@ -115,12 +122,17 @@ class SteveGPTHandler(SimpleHTTPRequestHandler):
             self.send_json(200, {
                 "reply": get_fallback_reply(user_message),
                 "source": "fallback",
-                "apiError": "Could not reach OpenAI."
+                "apiError": "Could not reach xAI."
             })
             return
 
+        reply = ""
+        choices = data.get("choices")
+        if choices:
+            reply = choices[0].get("message", {}).get("content", "")
+
         self.send_json(200, {
-            "reply": data.get("output_text") or "I am here, but I could not form a reply just now."
+            "reply": reply or "I am here, but I could not form a reply just now."
         })
 
     def send_json(self, status, body):
@@ -136,15 +148,15 @@ def get_fallback_reply(message):
     message = message.lower()
 
     if "hello" in message or "hi" in message:
-        return "Hello from SteveGPT. The chat is wired up and ready for the real AI once the OpenAI quota is available."
+        return "yo. endpoint is connected, but im fallback rn until the xAI reply works."
 
     if "capstone" in message or "project" in message:
-        return "This capstone demo shows a working SteveGPT chat interface with a private server endpoint ready for OpenAI responses."
+        return "its steve's capstone demo lol. public chat page, private ai endpoint."
 
     if "train" in message or "training" in message:
         return "For this project, start by improving my instructions and adding knowledge about the capstone before considering fine-tuning."
 
-    return "SteveGPT is connected through the server now. The OpenAI request path is ready, but this fallback is answering until the API quota is available."
+    return "fallback reply rn. the endpoint exists, but the xAI request didnt finish."
 
 
 if __name__ == "__main__":
