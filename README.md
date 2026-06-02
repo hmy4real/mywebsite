@@ -10,10 +10,10 @@ This site includes a private chat endpoint for the SteveGPT capstone demo.
 cp .env.example .env
 ```
 
-2. Put your OpenAI API key in `.env`:
+2. Put your xAI API key in `.env`:
 
 ```bash
-OPENAI_API_KEY=your_openai_api_key_here
+XAI_API_KEY=your_xai_api_key_here
 STEVEGPT_EXTRA_MEMORY=optional_private_extra_details_about_steve
 ```
 
@@ -37,7 +37,7 @@ http://127.0.0.1:3000/capstone/index.html
 
 ## Important
 
-Do not put an OpenAI API key in `js/chatbot.js`, `index.html`, or any other browser file.
+Do not put an xAI API key in `js/chatbot.js`, `index.html`, or any other browser file.
 Browser files are public. The key belongs only in `.env` locally or in private deployment
 environment variables on a server.
 
@@ -56,13 +56,13 @@ This repo includes a Vercel serverless endpoint at `api/chat.js`.
 3. Add:
 
 ```text
-OPENAI_API_KEY=your_openai_api_key_here
+XAI_API_KEY=your_xai_api_key_here
 STEVEGPT_EXTRA_MEMORY=optional_private_extra_details_about_steve
 ```
 
 4. Deploy the project.
 
-SteveGPT uses `gpt-5.4-mini` in `api/chat.js`. The optional `STEVEGPT_EXTRA_MEMORY`
+SteveGPT uses `grok-4.3` in `api/chat.js`. The optional `STEVEGPT_EXTRA_MEMORY`
 environment variable lets you add more private Steve-specific memory in Vercel without
 putting it into browser files.
 
@@ -76,4 +76,4 @@ window.STEVEGPT_API_ENDPOINT = "https://your-vercel-project.vercel.app/api/chat"
 ```
 
 Then commit and push that change to GitHub Pages. The Vercel endpoint allows browser
-requests, but the OpenAI key still stays private inside Vercel.
+requests, but the xAI key still stays private inside Vercel.
