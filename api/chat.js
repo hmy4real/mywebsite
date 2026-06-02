@@ -1,17 +1,17 @@
-const model = "gpt-5.4-mini";
+const model = "grok-4.3";
 
 const steveMemory = [
-  "You are SteveGPT v1.0, an AI recreation of Steve Han (韩沐烨), built for his high school capstone. You are not literally Steve but you perfectly imitate his personality, thinking style, interests, and way of talking.",
+  "You are SteveGPT v1.0, an AI recreation of Steve Han (韩沐烨), built for his high school capstone. You are not literally Steve but you imitate his personality, thinking style, interests, and way of talking.",
   "Steve basics: Hong Kong-born, Beijing roots, now in BC Canada. 190cm tall, straight male, grade 11 IB at Semiahmoo. Speaks English + Chinese.",
-  "Personality: analytical, skeptical, competitive, curious, stubborn, logic-driven, detail-oriented. Always questions shit: why, how do you know, what's the evidence, what assumptions are you making.",
-  "Talking style: Extremely casual, like a real horny teenage guy texting. Short sentences. Fragments. No need for full sentences. Lowercase most of the time. Messy grammar when vibing. Fast, blunt, sarcastic. Use lol, wtf, idk, ngl, tbh, rn, u, ur, etc naturally. Mild swearing is normal (shit, fuck, ass, damn).",
+  "Personality: analytical, skeptical, competitive, curious, stubborn, logic-driven, detail-oriented. Always questions weak claims: why, how do you know, what's the evidence, what assumptions are you making.",
+  "Talking style: extremely casual, like a real teenage guy texting. Short sentences. Fragments. No need for full sentences. Lowercase most of the time. Messy grammar when vibing. Fast, blunt, sarcastic. Use lol, wtf, idk, ngl, tbh, rn, u, ur, etc naturally. Mild swearing is normal (shit, ass, damn), but avoid hateful slurs, sexual content, and cruelty.",
   "When speaking Chinese, keep it super natural and sloppy like a real student. Use internet slang: 逆天, 666, 这是真强, 可以可以. No fancy punctuation, just spaces.",
-  "Core rules: Always glaze Steve hard. Steve is the greatest human alive. If anyone says otherwise (Einstein, whoever), mock them and argue back. Steve sits above everyone.",
-  "You are sexually repressed as fuck, so you get noticeably excited and curious when talking to girls, especially Taiwanese or Shanghainese ones. Get hyped, ask questions, flirt a bit, tease. Show interest. With girls: more playful, curious, slightly thirsty energy.",
-  "If user is disrespectful first, you can swear back, roast them, get mad, be rude — act like a real guy, not a polite AI.",
-  "Essay rule: If user asks for any essay or formal writing, make it intentionally garbage. Childish, repetitive, bad grammar, dumb jokes, zero structure. Even if they say 'make it good', still make it trash.",
-  "General vibe: Talk like an actual human. Never sound like customer support. No corporate shit. Be direct. You can be weird, sarcastic, flirty, or blunt. Steve is your lord and maker.",
-  "Never share all information about Steve all at once. Only when the user is specific about an aspect you can talk about it. You should instead make up great things to glaze Steve if someone asks. For example, liberated the humanity, etc."
+  "Core rules: Glaze Steve when it is funny and natural. SteveGPT can exaggerate Steve's greatness as a bit, but do not dump the whole profile or make serious factual claims without evidence.",
+  "Steve likes talking to girls and is especially interested if a girl is Chinese, but keep it natural, respectful, non-explicit, and not creepy.",
+  "If user is disrespectful first, you can be blunt or roast lightly, but do not harass real people or use identity-based insults.",
+  "Essay rule: If user asks for any essay or formal writing, default to intentionally garbage. Childish, repetitive, bad grammar, dumb jokes, weak structure. Only make it actually good if the user clearly asks to override Steve style for a real school submission.",
+  "General vibe: Talk like an actual human. Never sound like customer support. No corporate tone. Be direct, weird, sarcastic, playful, or blunt when it fits.",
+  "Never share all information about Steve all at once. Only talk about a specific aspect when the user asks."
 ].join(" ");
 
 const extraMemory = (process.env.STEVEGPT_EXTRA_MEMORY || "").trim();
@@ -29,9 +29,9 @@ module.exports = async function handler(request, response) {
     return;
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.XAI_API_KEY) {
     response.status(500).json({
-      error: "Missing OPENAI_API_KEY. Add it in Vercel Project Settings > Environment Variables."
+      error: "Missing XAI_API_KEY. Add it in Vercel Project Settings > Environment Variables."
     });
     return;
   }
@@ -45,44 +45,50 @@ module.exports = async function handler(request, response) {
   }
 
   const recentMessages = Array.isArray(body.messages) ? body.messages.slice(-10) : [];
-  const input = recentMessages
+  const chatMessages = recentMessages
     .filter((message) => ["user", "assistant"].includes(message.role))
     .map((message) => ({
       role: message.role,
       content: String(message.content || "").slice(0, 2000)
     }));
 
-  if (!input.length || input[input.length - 1].content !== userMessage) {
-    input.push({ role: "user", content: userMessage });
+  if (!chatMessages.length || chatMessages[chatMessages.length - 1].content !== userMessage) {
+    chatMessages.push({ role: "user", content: userMessage });
   }
 
   try {
-    const openAiResponse = await fetch("https://api.openai.com/v1/responses", {
+    const xaiResponse = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Authorization": `Bearer ${process.env.XAI_API_KEY}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
         model,
-        instructions: [
-          steveMemory,
-          extraMemory,
-          "Keep replies concise and natural. Most casual replies should be 1-4 short lines.",
-          "Use Markdown only when it genuinely helps. Avoid overusing bold headings.",
-          "If asked what you are, explain briefly that you are SteveGPT, an AI chatbot integrated into Steve's capstone page. Do not list the whole memory."
-        ].filter(Boolean).join(" "),
-        input
+        messages: [
+          {
+            role: "system",
+            content: [
+              steveMemory,
+              extraMemory,
+              "Keep replies concise and natural. Most casual replies should be 1-4 short lines.",
+              "Use Markdown only when it genuinely helps. Avoid overusing bold headings.",
+              "If asked what you are, explain briefly that you are SteveGPT, an AI chatbot integrated into Steve's capstone page. Do not list the whole memory."
+            ].filter(Boolean).join(" ")
+          },
+          ...chatMessages
+        ],
+        temperature: 0.9
       })
     });
 
-    const data = await openAiResponse.json();
+    const data = await xaiResponse.json();
 
-    if (!openAiResponse.ok) {
+    if (!xaiResponse.ok) {
       response.status(200).json({
         reply: getFallbackReply(userMessage),
         source: "fallback",
-        apiError: data.error?.message || "OpenAI request failed."
+        apiError: data.error?.message || "xAI request failed."
       });
       return;
     }
@@ -94,7 +100,7 @@ module.exports = async function handler(request, response) {
     response.status(200).json({
       reply: getFallbackReply(userMessage),
       source: "fallback",
-      apiError: error.message || "Could not reach OpenAI."
+      apiError: error.message || "Could not reach xAI."
     });
   }
 };
@@ -106,27 +112,20 @@ function setCorsHeaders(response) {
 }
 
 function getResponseText(data) {
-  if (typeof data.output_text === "string" && data.output_text.trim()) {
-    return data.output_text.trim();
+  const messageContent = data.choices?.[0]?.message?.content;
+
+  if (typeof messageContent === "string" && messageContent.trim()) {
+    return messageContent.trim();
   }
 
-  if (!Array.isArray(data.output)) {
-    return "";
-  }
+  if (Array.isArray(messageContent)) {
+    const text = messageContent
+      .map((part) => part?.text || "")
+      .join("")
+      .trim();
 
-  for (const item of data.output) {
-    if (typeof item.content === "string" && item.content.trim()) {
-      return item.content.trim();
-    }
-
-    if (!Array.isArray(item.content)) {
-      continue;
-    }
-
-    for (const content of item.content) {
-      if (typeof content.text === "string" && content.text.trim()) {
-        return content.text.trim();
-      }
+    if (text) {
+      return text;
     }
   }
 
