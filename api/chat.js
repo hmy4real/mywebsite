@@ -86,7 +86,7 @@ module.exports = async function handler(request, response) {
     }
 
     response.status(200).json({
-      reply: data.output_text || "I am here, but I could not form a reply just now."
+      reply: getResponseText(data) || getFallbackReply(userMessage)
     });
   } catch (error) {
     response.status(200).json({
@@ -101,6 +101,34 @@ function setCorsHeaders(response) {
   response.setHeader("Access-Control-Allow-Origin", process.env.ALLOWED_ORIGIN || "*");
   response.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   response.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+function getResponseText(data) {
+  if (typeof data.output_text === "string" && data.output_text.trim()) {
+    return data.output_text.trim();
+  }
+
+  if (!Array.isArray(data.output)) {
+    return "";
+  }
+
+  for (const item of data.output) {
+    if (typeof item.content === "string" && item.content.trim()) {
+      return item.content.trim();
+    }
+
+    if (!Array.isArray(item.content)) {
+      continue;
+    }
+
+    for (const content of item.content) {
+      if (typeof content.text === "string" && content.text.trim()) {
+        return content.text.trim();
+      }
+    }
+  }
+
+  return "";
 }
 
 function getFallbackReply(message) {
