@@ -50,59 +50,131 @@ function addMessage(text, sender, extraClass = "") {
 }
 
 function formatBotReply(text) {
-  const fragment = document.createDocumentFragment();
-  const lines = String(text || "").split(/\n+/).filter((line) => line.trim());
+  const wrapper = document.createElement("div");
+  wrapper.className = "chat-rendered";
 
-  if (!lines.length) {
-    fragment.appendChild(document.createTextNode(""));
-    return fragment;
-  }
+  const rawText = String(text || "");
+  const { source, mathBlocks } = extractMathBlocks(rawText);
+  const html = window.marked
+    ? window.marked.parse(source, { breaks: true, gfm: true })
+    : fallbackMarkdown(source);
 
-  lines.forEach((line) => {
-    const paragraph = document.createElement("p");
-    renderInlineMarkdown(line.trim(), paragraph);
-    fragment.appendChild(paragraph);
-  });
+  wrapper.innerHTML = window.DOMPurify
+    ? window.DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: [
+        "a", "blockquote", "br", "code", "del", "div", "em", "h1", "h2", "h3",
+        "h4", "hr", "li", "ol", "p", "pre", "span", "strong", "table", "tbody",
+        "td", "th", "thead", "tr", "ul"
+      ],
+      ALLOWED_ATTR: ["class", "href", "rel", "target"]
+    })
+    : html;
 
-  return fragment;
+  restoreMathBlocks(wrapper, mathBlocks);
+  polishRenderedLinks(wrapper);
+
+  return wrapper;
 }
 
-function renderInlineMarkdown(text, parent) {
-  const pattern = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^)]+\))/g;
-  let lastIndex = 0;
-  let match;
+function extractMathBlocks(text) {
+  const mathBlocks = [];
+  const tokenPrefix = "STEVEGPT_MATH_BLOCK_";
+  const source = text.replace(/(\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|(?<!\$)\$[^\n$]+?\$(?!\$))/g, (match) => {
+    const token = `${tokenPrefix}${mathBlocks.length}`;
+    let display = false;
+    let formula = match;
 
-  while ((match = pattern.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parent.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+    if (match.startsWith("$$")) {
+      display = true;
+      formula = match.slice(2, -2);
+    } else if (match.startsWith("\\[")) {
+      display = true;
+      formula = match.slice(2, -2);
+    } else if (match.startsWith("\\(")) {
+      formula = match.slice(2, -2);
+    } else if (match.startsWith("$")) {
+      formula = match.slice(1, -1);
     }
 
-    const token = match[0];
+    mathBlocks.push({ token, formula: formula.trim(), display });
+    return token;
+  });
 
-    if (token.startsWith("**")) {
-      const strong = document.createElement("strong");
-      strong.textContent = token.slice(2, -2);
-      parent.appendChild(strong);
-    } else if (token.startsWith("`")) {
-      const code = document.createElement("code");
-      code.textContent = token.slice(1, -1);
-      parent.appendChild(code);
-    } else {
-      const linkMatch = token.match(/^\[([^\]]+)\]\((https?:\/\/[^)]+)\)$/);
-      const link = document.createElement("a");
-      link.textContent = linkMatch[1];
-      link.href = linkMatch[2];
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      parent.appendChild(link);
+  return { source, mathBlocks };
+}
+
+function restoreMathBlocks(container, mathBlocks) {
+  mathBlocks.forEach(({ token, formula, display }) => {
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+    const matches = [];
+
+    while (walker.nextNode()) {
+      if (walker.currentNode.nodeValue.includes(token)) {
+        matches.push(walker.currentNode);
+      }
     }
 
-    lastIndex = pattern.lastIndex;
+    matches.forEach((node) => {
+      const pieces = node.nodeValue.split(token);
+      const fragment = document.createDocumentFragment();
+
+      pieces.forEach((piece, index) => {
+        if (piece) {
+          fragment.appendChild(document.createTextNode(piece));
+        }
+
+        if (index < pieces.length - 1) {
+          fragment.appendChild(renderMath(formula, display));
+        }
+      });
+
+      node.parentNode.replaceChild(fragment, node);
+    });
+  });
+}
+
+function renderMath(formula, display) {
+  const element = document.createElement(display ? "div" : "span");
+  element.className = display ? "math-block" : "math-inline";
+
+  if (window.katex) {
+    try {
+      window.katex.render(formula, element, {
+        displayMode: display,
+        throwOnError: false,
+        strict: "ignore"
+      });
+      return element;
+    } catch {
+      // Fall through to a readable plain-text fallback.
+    }
   }
 
-  if (lastIndex < text.length) {
-    parent.appendChild(document.createTextNode(text.slice(lastIndex)));
-  }
+  element.textContent = display ? `$$${formula}$$` : `$${formula}$`;
+  return element;
+}
+
+function polishRenderedLinks(container) {
+  container.querySelectorAll("a").forEach((link) => {
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+  });
+}
+
+function fallbackMarkdown(text) {
+  return String(text || "")
+    .split(/\n{2,}/)
+    .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+}
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function getLocalReply(message) {
