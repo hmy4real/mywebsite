@@ -401,6 +401,18 @@ body::after {
   color: var(--muted);
 }
 
+.chat-message.streaming .chat-bubble::after {
+  content: "";
+  display: inline-block;
+  width: 0.48em;
+  height: 1em;
+  margin-left: 0.16em;
+  border-radius: 999px;
+  background: rgba(27, 27, 31, 0.72);
+  vertical-align: -0.15em;
+  animation: cursorBlink 1s steps(2, start) infinite;
+}
+
 .chat-bubble p {
   margin: 0;
 }
@@ -617,6 +629,12 @@ body::after {
 
   50% {
     transform: translateY(-14px) rotate(-4deg);
+  }
+}
+
+@keyframes cursorBlink {
+  50% {
+    opacity: 0;
   }
 }
 
