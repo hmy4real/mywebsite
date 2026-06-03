@@ -1,1 +1,1 @@
-window.STEVEGPT_API_ENDPOINT = "/api/chat";
+window.STEVEGPT_API_ENDPOINT = "https://mywebsite-eta-coral.vercel.app/api/chat";
