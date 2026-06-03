@@ -120,7 +120,7 @@ function splitLongParagraph(text) {
     return text;
   }
 
-  const sentences = text.split(/(?<=[.!?])\s+/);
+  const sentences = splitTextIntoSentences(text);
 
   if (sentences.length < 2) {
     return chunkLongText(text);
@@ -151,6 +151,17 @@ function splitLongParagraph(text) {
   }
 
   return paragraphs.join("\n\n");
+}
+
+function splitTextIntoSentences(text) {
+  const placeholder = "STEVEGPT_ABBR_DOT";
+  const protectedText = text.replace(/\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|Mt|vs|etc|e\.g|i\.e)\./gi, (match) => (
+    match.replace(/\./g, placeholder)
+  ));
+
+  return protectedText
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.replaceAll(placeholder, "."));
 }
 
 function chunkLongText(text) {
