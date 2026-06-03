@@ -100,13 +100,83 @@ function normalizeReplyParagraphs(text) {
         return block;
       }
 
-      return block
+      const normalizedBlock = block
         .split("\n")
         .map((line) => line.trim())
         .filter(Boolean)
         .join("\n\n");
+
+      if (normalizedBlock.includes("\n\n")) {
+        return normalizedBlock;
+      }
+
+      return splitLongParagraph(normalizedBlock);
     })
     .join("\n\n");
+}
+
+function splitLongParagraph(text) {
+  if (text.length < 360) {
+    return text;
+  }
+
+  const sentences = text.split(/(?<=[.!?])\s+/);
+
+  if (sentences.length < 2) {
+    return chunkLongText(text);
+  }
+
+  const paragraphs = [];
+  let current = "";
+
+  sentences.forEach((sentence) => {
+    const trimmedSentence = sentence.trim();
+
+    if (!trimmedSentence) {
+      return;
+    }
+
+    const next = current ? `${current} ${trimmedSentence}` : trimmedSentence;
+
+    if (current && next.length > 300) {
+      paragraphs.push(current);
+      current = trimmedSentence;
+    } else {
+      current = next;
+    }
+  });
+
+  if (current) {
+    paragraphs.push(current);
+  }
+
+  return paragraphs.join("\n\n");
+}
+
+function chunkLongText(text) {
+  const paragraphs = [];
+  let remaining = text.trim();
+
+  while (remaining.length > 320) {
+    let splitAt = Math.max(
+      remaining.lastIndexOf(". ", 300),
+      remaining.lastIndexOf(", ", 300),
+      remaining.lastIndexOf(" ", 300)
+    );
+
+    if (splitAt < 180) {
+      splitAt = 300;
+    }
+
+    paragraphs.push(remaining.slice(0, splitAt + 1).trim());
+    remaining = remaining.slice(splitAt + 1).trim();
+  }
+
+  if (remaining) {
+    paragraphs.push(remaining);
+  }
+
+  return paragraphs.join("\n\n");
 }
 
 function extractMathBlocks(text) {
