@@ -11,6 +11,8 @@ const submitButton = chatForm.querySelector("button");
 
 const conversation = [];
 const welcomeMessage = "Hi, I am SteveGPT. Ask me anything about this capstone demo.";
+let activeRequestController = null;
+let activeRequestId = 0;
 
 const localReplies = [
   {
@@ -49,6 +51,17 @@ function addMessage(text, sender, extraClass = "") {
   chatMessages.scrollTop = chatMessages.scrollHeight;
 
   return message;
+}
+
+function updateBotMessage(message, text) {
+  const bubble = message.querySelector(".chat-bubble");
+
+  if (!bubble) {
+    return;
+  }
+
+  bubble.replaceChildren(formatBotReply(text));
+  chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 function formatBotReply(text) {
@@ -192,7 +205,7 @@ function getLocalReply(message) {
   return "That is interesting. Tell me a little more, and I will try to keep up.";
 }
 
-async function getBotReply(message) {
+async function getBotReply(message, onChunk, signal) {
   if (!CHAT_API_ENDPOINT) {
     return getLocalReply(message);
   }
@@ -205,15 +218,66 @@ async function getBotReply(message) {
     body: JSON.stringify({
       message,
       messages: conversation
-    })
+    }),
+    signal
   });
 
   if (!response.ok) {
     throw new Error("Chat request failed.");
   }
 
+  if (response.body && response.headers.get("content-type")?.includes("text/event-stream")) {
+    return readReplyStream(response, onChunk);
+  }
+
   const data = await response.json();
   return data.reply || getLocalReply(message);
+}
+
+async function readReplyStream(response, onChunk) {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let fullReply = "";
+
+  while (true) {
+    const { value, done } = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split(/\r?\n/);
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data:")) {
+        continue;
+      }
+
+      const payload = line.slice(5).trim();
+
+      if (!payload || payload === "[DONE]") {
+        continue;
+      }
+
+      try {
+        const data = JSON.parse(payload);
+        const chunk = data.delta || data.reply || "";
+
+        if (chunk) {
+          fullReply += chunk;
+          onChunk(fullReply);
+        }
+      } catch {
+        fullReply += payload;
+        onChunk(fullReply);
+      }
+    }
+  }
+
+  return fullReply.trim();
 }
 
 chatForm.addEventListener("submit", async (event) => {
@@ -227,27 +291,47 @@ chatForm.addEventListener("submit", async (event) => {
   chatInput.value = "";
   chatInput.disabled = true;
   submitButton.disabled = true;
-  chatStatus.textContent = "Thinking...";
+  chatStatus.textContent = "Generating...";
   addMessage(message, "user");
   conversation.push({ role: "user", content: message });
 
-  const typingMessage = addMessage("SteveGPT is thinking...", "bot", "typing");
+  activeRequestController?.abort();
+  activeRequestController = new AbortController();
+  const requestId = ++activeRequestId;
+  const replyMessage = addMessage("", "bot", "streaming");
 
   try {
-    const reply = await getBotReply(message);
-    typingMessage.remove();
-    addMessage(reply, "bot");
-    conversation.push({ role: "assistant", content: reply });
-  } catch {
-    typingMessage.remove();
+    const reply = await getBotReply(message, (partialReply) => {
+      if (requestId === activeRequestId) {
+        updateBotMessage(replyMessage, partialReply);
+      }
+    }, activeRequestController.signal);
+
+    if (requestId !== activeRequestId) {
+      return;
+    }
+
+    const finalReply = reply || getLocalReply(message);
+    updateBotMessage(replyMessage, finalReply);
+    replyMessage.classList.remove("streaming");
+    conversation.push({ role: "assistant", content: finalReply });
+  } catch (error) {
+    if (error.name === "AbortError") {
+      return;
+    }
+
     const localReply = getLocalReply(message);
-    addMessage(localReply, "bot");
+    updateBotMessage(replyMessage, localReply);
+    replyMessage.classList.remove("streaming");
     conversation.push({ role: "assistant", content: localReply });
   } finally {
-    chatInput.disabled = false;
-    submitButton.disabled = false;
-    chatStatus.textContent = "Ready to chat";
-    chatInput.focus();
+    if (requestId === activeRequestId) {
+      activeRequestController = null;
+      chatInput.disabled = false;
+      submitButton.disabled = false;
+      chatStatus.textContent = "Ready to chat";
+      chatInput.focus();
+    }
   }
 });
 
@@ -259,9 +343,14 @@ chatExpand.addEventListener("click", () => {
 });
 
 chatClear.addEventListener("click", () => {
+  activeRequestController?.abort();
+  activeRequestController = null;
+  activeRequestId += 1;
   conversation.length = 0;
   chatMessages.replaceChildren();
   addMessage(welcomeMessage, "bot");
   chatStatus.textContent = "Ready to chat";
+  chatInput.disabled = false;
+  submitButton.disabled = false;
   chatInput.focus();
 });
