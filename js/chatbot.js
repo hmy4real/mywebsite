@@ -68,7 +68,7 @@ function formatBotReply(text) {
   const wrapper = document.createElement("div");
   wrapper.className = "chat-rendered";
 
-  const rawText = String(text || "");
+  const rawText = normalizeReplyParagraphs(String(text || ""));
   const { source, mathBlocks } = extractMathBlocks(rawText);
   const html = window.marked
     ? window.marked.parse(source, { breaks: true, gfm: true })
@@ -89,6 +89,24 @@ function formatBotReply(text) {
   polishRenderedLinks(wrapper);
 
   return wrapper;
+}
+
+function normalizeReplyParagraphs(text) {
+  return text
+    .replace(/\r\n/g, "\n")
+    .split(/\n{2,}/)
+    .map((block) => {
+      if (/^\s*([-*+]|\d+\.)\s+/m.test(block) || /```/.test(block)) {
+        return block;
+      }
+
+      return block
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .join("\n\n");
+    })
+    .join("\n\n");
 }
 
 function extractMathBlocks(text) {
