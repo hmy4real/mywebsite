@@ -1,5 +1,0 @@
-.env
-node_modules/
-.DS_Store
-server.js
-server.py

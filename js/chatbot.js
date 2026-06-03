@@ -6,9 +6,11 @@ const chatMessages = document.getElementById("chatMessages");
 const chatStatus = document.querySelector(".chat-status");
 const chatShell = document.querySelector(".chat-shell");
 const chatExpand = document.getElementById("chatExpand");
+const chatClear = document.getElementById("chatClear");
 const submitButton = chatForm.querySelector("button");
 
 const conversation = [];
+const welcomeMessage = "Hi, I am SteveGPT. Ask me anything about this capstone demo.";
 
 const localReplies = [
   {
@@ -251,7 +253,15 @@ chatForm.addEventListener("submit", async (event) => {
 
 chatExpand.addEventListener("click", () => {
   const isExpanded = chatShell.classList.toggle("is-expanded");
-  chatExpand.textContent = isExpanded ? "Small" : "Large";
   chatExpand.setAttribute("aria-pressed", String(isExpanded));
+  chatExpand.setAttribute("aria-label", isExpanded ? "Exit fullscreen" : "Enter fullscreen");
   chatMessages.scrollTop = chatMessages.scrollHeight;
+});
+
+chatClear.addEventListener("click", () => {
+  conversation.length = 0;
+  chatMessages.replaceChildren();
+  addMessage(welcomeMessage, "bot");
+  chatStatus.textContent = "Ready to chat";
+  chatInput.focus();
 });

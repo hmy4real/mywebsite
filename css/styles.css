@@ -83,6 +83,17 @@ body::after {
   isolation: isolate;
 }
 
+.home-page .hero {
+  align-items: center;
+  padding: 88px 28px 168px;
+}
+
+.home-page .hero-inner {
+  min-height: 82vh;
+  place-items: center;
+  padding: 150px 60px 170px;
+}
+
 .ambient {
   position: absolute;
   inset: 0;
@@ -279,25 +290,53 @@ body::after {
   color: var(--muted);
 }
 
-.chat-expand {
+.chat-actions {
   flex: 0 0 auto;
-  min-height: 36px;
-  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-expand,
+.chat-clear {
+  flex: 0 0 auto;
+  width: 38px;
+  min-height: 38px;
+  padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.88);
   border-radius: 999px;
   color: #1b1b1f;
   background: rgba(255, 255, 255, 0.68);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
-  font: inherit;
-  font-size: 0.88rem;
-  font-weight: 650;
+  display: grid;
+  place-items: center;
   cursor: pointer;
   transition: transform 0.24s cubic-bezier(.22, 1, .36, 1), background 0.24s cubic-bezier(.22, 1, .36, 1);
 }
 
-.chat-expand:hover {
+.chat-expand:hover,
+.chat-clear:hover {
   background: rgba(255, 255, 255, 0.86);
   transform: translateY(-1px);
+}
+
+.fullscreen-icon,
+.clear-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.clear-icon {
+  background: center / contain no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%231b1b1f'%20stroke-width='2.25'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M3%206h18'/%3E%3Cpath%20d='M8%206V4a2%202%200%200%201%202-2h4a2%202%200%200%201%202%202v2'/%3E%3Cpath%20d='M19%206l-1%2014a2%202%200%200%201-2%202H8a2%202%200%200%201-2-2L5%206'/%3E%3Cpath%20d='M10%2011v6'/%3E%3Cpath%20d='M14%2011v6'/%3E%3C/svg%3E");
+}
+
+.fullscreen-icon {
+  background: center / contain no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%231b1b1f'%20stroke-width='2.4'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M8%203H5a2%202%200%200%200-2%202v3'/%3E%3Cpath%20d='M16%203h3a2%202%200%200%201%202%202v3'/%3E%3Cpath%20d='M21%2016v3a2%202%200%200%201-2%202h-3'/%3E%3Cpath%20d='M8%2021H5a2%202%200%200%201-2-2v-3'/%3E%3C/svg%3E");
+}
+
+.chat-shell.is-expanded .fullscreen-icon {
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%231b1b1f'%20stroke-width='2.4'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M8%203v3a2%202%200%200%201-2%202H3'/%3E%3Cpath%20d='M16%203v3a2%202%200%200%200%202%202h3'/%3E%3Cpath%20d='M21%2016h-3a2%202%200%200%200-2%202v3'/%3E%3Cpath%20d='M3%2016h3a2%202%200%200%201%202%202v3'/%3E%3C/svg%3E");
 }
 
 .chat-shell.is-expanded {
@@ -336,6 +375,15 @@ body::after {
   box-shadow: 0 10px 28px rgba(17, 17, 17, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
+.chat-message.user .chat-bubble {
+  color: #ffffff;
+  background: linear-gradient(180deg, #303035, #111113);
+}
+
+.chat-message.typing .chat-bubble {
+  color: var(--muted);
+}
+
 .chat-bubble p {
   margin: 0;
 }
@@ -345,7 +393,13 @@ body::after {
 }
 
 .chat-rendered > * + * {
-  margin-top: 0.65em;
+  margin-top: 0.9em;
+}
+
+.chat-rendered br {
+  content: "";
+  display: block;
+  margin-top: 0.85em;
 }
 
 .chat-rendered strong {
@@ -424,15 +478,6 @@ body::after {
   max-width: 100%;
   margin: 0.55em 0;
   overflow-x: auto;
-}
-
-.chat-message.user .chat-bubble {
-  color: #ffffff;
-  background: linear-gradient(180deg, #303035, #111113);
-}
-
-.chat-message.typing .chat-bubble {
-  color: var(--muted);
 }
 
 .chat-form {
@@ -562,6 +607,10 @@ body::after {
   .hero-inner {
     padding: 34px 46px 72px;
   }
+
+  .home-page .hero-inner {
+    padding: 140px 46px 160px;
+  }
 }
 
 @media (max-width: 760px) {
@@ -580,6 +629,15 @@ body::after {
   .hero-inner {
     min-height: calc(100vh - 94px);
     padding: 34px 10px 76px;
+  }
+
+  .home-page .hero {
+    padding: 44px 16px 110px;
+  }
+
+  .home-page .hero-inner {
+    min-height: 82vh;
+    padding: 140px 18px 150px;
   }
 
   .hero-title {
@@ -606,10 +664,10 @@ body::after {
     padding: 18px 18px 14px;
   }
 
-  .chat-expand {
-    min-height: 34px;
-    padding: 0 12px;
-    font-size: 0.82rem;
+  .chat-expand,
+  .chat-clear {
+    width: 36px;
+    min-height: 36px;
   }
 
   .chat-shell.is-expanded {

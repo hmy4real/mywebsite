@@ -37,7 +37,14 @@
                 <div class="chat-name">SteveGPT</div>
                 <div class="chat-status">Ready to chat</div>
               </div>
-              <button class="chat-expand" id="chatExpand" type="button" aria-pressed="false">Large</button>
+              <div class="chat-actions">
+                <button class="chat-clear" id="chatClear" type="button" aria-label="Clear chat history">
+                  <span class="clear-icon" aria-hidden="true"></span>
+                </button>
+                <button class="chat-expand" id="chatExpand" type="button" aria-pressed="false" aria-label="Enter fullscreen">
+                  <span class="fullscreen-icon" aria-hidden="true"></span>
+                </button>
+              </div>
             </div>
 
             <div class="chat-messages" id="chatMessages" aria-live="polite">
