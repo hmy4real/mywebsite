@@ -413,22 +413,26 @@ body::after {
   animation: cursorBlink 1s steps(2, start) infinite;
 }
 
-.chat-bubble p {
-  margin: 0;
-}
-
 .chat-rendered > * {
   margin: 0;
 }
 
 .chat-rendered > * + * {
-  margin-top: 1em;
+  margin-top: 1.25rem;
+}
+
+.chat-rendered p {
+  margin: 0;
+}
+
+.chat-rendered p + p {
+  margin-top: 1.25rem;
 }
 
 .chat-rendered br {
   content: "";
   display: block;
-  margin-top: 0.9em;
+  margin-top: 1.1rem;
 }
 
 .chat-rendered strong {
