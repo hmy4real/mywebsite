@@ -218,7 +218,8 @@ function replaceConversationReply(sourcePrompt, content) {
 function saveConversationHistory() {
   const trimmedHistory = conversation.slice(-40);
   localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(trimmedHistory));
-}\n
+}
+
 function loadConversationHistory() {
   let savedHistory = [];
 
