@@ -60,7 +60,7 @@ function addMessage(text, sender, extraClass = "") {
   return message;
 }
 
-function updateBotMessage(message, text) {
+function updateBotMessage(message, text, options = {}) {
   const bubble = message.querySelector(".chat-bubble");
 
   if (!bubble) {
@@ -68,7 +68,85 @@ function updateBotMessage(message, text) {
   }
 
   bubble.replaceChildren(formatBotReply(text));
+  message.dataset.reply = text;
+
+  if (options.sourcePrompt) {
+    message.dataset.sourcePrompt = options.sourcePrompt;
+  }
+
+  if (options.actions) {
+    addReplyActions(message);
+  }
+
   chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function addReplyActions(message) {
+  let actions = message.querySelector(".chat-reply-actions");
+
+  if (!actions) {
+    actions = document.createElement("div");
+    actions.className = "chat-reply-actions";
+    actions.style.display = "flex";
+    actions.style.gap = "6px";
+    actions.style.marginTop = "6px";
+    actions.style.paddingLeft = "3px";
+    message.appendChild(actions);
+  }
+
+  actions.replaceChildren(
+    createActionButton("Copy", "copy", copyIconSvg()),
+    createActionButton("Regenerate", "regenerate", regenerateIconSvg())
+  );
+}
+
+function createActionButton(label, action, icon) {
+  const button = document.createElement("button");
+  button.className = "chat-reply-action";
+  button.type = "button";
+  button.dataset.action = action;
+  button.setAttribute("aria-label", label);
+  button.title = label;
+  button.innerHTML = icon;
+  button.style.width = "30px";
+  button.style.height = "30px";
+  button.style.display = "inline-grid";
+  button.style.placeItems = "center";
+  button.style.border = "0";
+  button.style.borderRadius = "999px";
+  button.style.color = "rgba(27, 27, 31, 0.68)";
+  button.style.background = "transparent";
+  button.style.cursor = "pointer";
+  button.style.padding = "0";
+
+  const svg = button.querySelector("svg");
+  svg.style.width = "16px";
+  svg.style.height = "16px";
+  svg.style.fill = "none";
+  svg.style.stroke = "currentColor";
+  svg.style.strokeWidth = "2";
+  svg.style.strokeLinecap = "round";
+  svg.style.strokeLinejoin = "round";
+
+  return button;
+}
+
+function copyIconSvg() {
+  return [
+    "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
+    "<rect x=\"8\" y=\"8\" width=\"12\" height=\"12\" rx=\"2\"></rect>",
+    "<path d=\"M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2\"></path>",
+    "</svg>"
+  ].join("");
+}
+
+function regenerateIconSvg() {
+  return [
+    "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
+    "<path d=\"M21 12a9 9 0 1 1-3-6.7\"></path>",
+    "<path d=\"M21 3v6h-6\"></path>",
+    "</svg>"
+  ].join("");
 }
 
 function formatBotReply(text) {
@@ -319,6 +397,23 @@ function getBanMessage(message = "") {
   return /[\u3400-\u9fff]/.test(message) ? BAN_MESSAGE_ZH : BAN_MESSAGE_EN;
 }
 
+async function copyText(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
+}
+
 function formatRemainingTime(milliseconds) {
   const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
   const hours = Math.floor(totalSeconds / 3600);
@@ -496,6 +591,76 @@ async function readReplyStream(response) {
   };
 }
 
+async function regenerateBotReply(messageElement) {
+  if (updateBanState()) {
+    return;
+  }
+
+  const prompt = messageElement.dataset.sourcePrompt;
+
+  if (!prompt) {
+    return;
+  }
+
+  activeRequestController?.abort();
+  activeRequestController = new AbortController();
+  const requestId = ++activeRequestId;
+
+  chatInput.disabled = true;
+  submitButton.disabled = true;
+  chatStatus.textContent = "Regenerating...";
+  updateBotMessage(messageElement, "SteveGPT is thinking...");
+  messageElement.classList.add("streaming");
+
+  try {
+    const { reply, banned } = await getBotReply(prompt);
+
+    if (requestId !== activeRequestId) {
+      return;
+    }
+
+    const finalReply = reply || getLocalReply(prompt);
+
+    if (banned || isBanReply(finalReply)) {
+      updateBotMessage(messageElement, finalReply || getBanMessage(prompt), {
+        sourcePrompt: prompt,
+        actions: true
+      });
+      messageElement.classList.remove("streaming");
+      conversation.push({ role: "assistant", content: finalReply || getBanMessage(prompt) });
+      startBan();
+      return;
+    }
+
+    updateBotMessage(messageElement, finalReply, {
+      sourcePrompt: prompt,
+      actions: true
+    });
+    messageElement.classList.remove("streaming");
+    conversation.push({ role: "assistant", content: finalReply });
+  } catch (error) {
+    if (error.name === "AbortError") {
+      return;
+    }
+
+    const localReply = getLocalReply(prompt);
+    updateBotMessage(messageElement, localReply, {
+      sourcePrompt: prompt,
+      actions: true
+    });
+    messageElement.classList.remove("streaming");
+    conversation.push({ role: "assistant", content: localReply });
+  } finally {
+    if (requestId === activeRequestId && !updateBanState()) {
+      activeRequestController = null;
+      chatInput.disabled = false;
+      submitButton.disabled = false;
+      chatStatus.textContent = "Ready to chat";
+      chatInput.focus();
+    }
+  }
+}
+
 chatForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -514,6 +679,14 @@ chatForm.addEventListener("submit", async (event) => {
   conversation.push({ role: "user", content: message });
 
   if (!CHAT_API_ENDPOINT && trackAntiSteveWarning(message)) {
+    const banReply = getBanMessage(message);
+    const replyMessage = addMessage("", "bot", "streaming");
+    updateBotMessage(replyMessage, banReply, {
+      sourcePrompt: message,
+      actions: true
+    });
+    replyMessage.classList.remove("streaming");
+    conversation.push({ role: "assistant", content: banReply });
     return;
   }
 
@@ -533,13 +706,22 @@ chatForm.addEventListener("submit", async (event) => {
     }
 
     if (banned || isBanReply(reply)) {
-      replyMessage.remove();
+      const banReply = reply || getBanMessage(message);
+      updateBotMessage(replyMessage, banReply, {
+        sourcePrompt: message,
+        actions: true
+      });
+      replyMessage.classList.remove("streaming");
+      conversation.push({ role: "assistant", content: banReply });
       startBan();
       return;
     }
 
     const finalReply = reply || getLocalReply(message);
-    updateBotMessage(replyMessage, finalReply);
+    updateBotMessage(replyMessage, finalReply, {
+      sourcePrompt: message,
+      actions: true
+    });
     replyMessage.classList.remove("streaming");
     conversation.push({ role: "assistant", content: finalReply });
   } catch (error) {
@@ -548,7 +730,10 @@ chatForm.addEventListener("submit", async (event) => {
     }
 
     const localReply = getLocalReply(message);
-    updateBotMessage(replyMessage, localReply);
+    updateBotMessage(replyMessage, localReply, {
+      sourcePrompt: message,
+      actions: true
+    });
     replyMessage.classList.remove("streaming");
     conversation.push({ role: "assistant", content: localReply });
   } finally {
@@ -580,12 +765,41 @@ chatClear?.addEventListener("click", () => {
   activeRequestController = null;
   activeRequestId += 1;
   conversation.length = 0;
-  localStorage.removeItem(BAN_WARNING_KEY);
-  localStorage.removeItem(BAN_UNTIL_KEY);
   chatMessages.replaceChildren();
   addMessage(welcomeMessage, "bot");
   updateBanState();
-  chatInput.focus();
+
+  if (!updateBanState()) {
+    chatInput.focus();
+  }
+});
+
+chatMessages.addEventListener("click", async (event) => {
+  const button = event.target.closest(".chat-reply-action");
+
+  if (!button) {
+    return;
+  }
+
+  const message = button.closest(".chat-message.bot");
+
+  if (!message) {
+    return;
+  }
+
+  if (button.dataset.action === "copy") {
+    try {
+      await copyText(message.dataset.reply || "");
+      button.classList.add("is-done");
+      setTimeout(() => button.classList.remove("is-done"), 900);
+    } catch {
+      button.classList.remove("is-done");
+    }
+  }
+
+  if (button.dataset.action === "regenerate") {
+    regenerateBotReply(message);
+  }
 });
 
 updateBanState();
