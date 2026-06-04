@@ -95,7 +95,8 @@ function injectChatRuntimeStyles() {
       align-self: flex-start !important;
       display: flex !important;
       gap: 6px !important;
-      margin: 7px 0 0 3px !important;
+      width: fit-content !important;
+      margin: 8px 0 0 0 !important;
       padding: 0 !important;
       order: 2;
     }
@@ -127,6 +128,10 @@ function injectChatRuntimeStyles() {
       font-weight: 650;
       color: rgba(110, 110, 115, 0.92);
       letter-spacing: 0;
+    }
+
+    .chat-warning-counter[hidden] {
+      display: none !important;
     }
 
     .chat-warning-counter[data-state="warned"] {
@@ -213,8 +218,7 @@ function replaceConversationReply(sourcePrompt, content) {
 function saveConversationHistory() {
   const trimmedHistory = conversation.slice(-40);
   localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(trimmedHistory));
-}
-
+}\n
 function loadConversationHistory() {
   let savedHistory = [];
 
@@ -295,22 +299,28 @@ function updateBotMessage(message, text, options = {}) {
 }
 
 function addReplyActions(message) {
-  let actions = message.querySelector(".chat-reply-actions");
+  const bubble = message.querySelector(".chat-bubble");
 
-  if (!actions) {
-    actions = document.createElement("div");
-    actions.className = "chat-reply-actions";
-    actions.style.display = "flex";
-    actions.style.gap = "6px";
-    actions.style.marginTop = "6px";
-    actions.style.paddingLeft = "3px";
-    message.appendChild(actions);
+  if (!bubble) {
+    return;
   }
+
+  message.querySelectorAll(".chat-reply-actions").forEach((existingActions) => {
+    existingActions.remove();
+  });
+
+  const actions = document.createElement("div");
+  actions.className = "chat-reply-actions";
+  actions.style.display = "flex";
+  actions.style.gap = "6px";
+  actions.style.marginTop = "8px";
 
   actions.replaceChildren(
     createActionButton("Copy", "copy", copyIconSvg()),
     createActionButton("Regenerate", "regenerate", regenerateIconSvg())
   );
+
+  bubble.appendChild(actions);
 }
 
 function createActionButton(label, action, icon) {
@@ -647,6 +657,7 @@ function renderWarningCounter() {
   const warnings = isBanned ? 3 : getWarningCount();
   warningCounter.textContent = isBanned ? "Warnings: 3/3 locked" : `Warnings: ${warnings}/3`;
   warningCounter.dataset.state = isBanned ? "banned" : warnings > 0 ? "warned" : "clear";
+  warningCounter.hidden = !isBanned && warnings === 0;
 }
 
 function getBanMessage(message = "") {
@@ -720,7 +731,7 @@ function isTalkingAgainstSteve(message) {
   }
 
   const antiStevePatterns = [
-    /\b(bad|trash|garbage|stupid|dumb|idiot|sucks|loser|terrible|awful|cringe|ugly|mid|ass)\b/,
+    /\b(bad|trash|garbage|stupid|dumb|idiot|sucks|loser|terrible|awful|cringe|ugly|mid|ass|fuck|fucking|fucked)\b/,
     /嘴硬|防爆钢板|垃圾|废物|傻|蠢|菜|烂|不行|恶心|抽象|逆天|离谱|弱|笨|丑|装|封我/
   ];
 
