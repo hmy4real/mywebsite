@@ -11,6 +11,13 @@ const submitButton = chatForm.querySelector("button");
 
 const conversation = [];
 const welcomeMessage = "Hi, I am SteveGPT. Ask me anything about this capstone demo.";
+const BAN_DURATION_MS = 5 * 60 * 1000;
+const BAN_MESSAGE_EN = "**You are banned from using SteveGPT for talking against Steve**";
+const BAN_MESSAGE_ZH = "**你已被禁止使用韩某GPT**";
+const BAN_WARNING_KEY = "stevegptAntiSteveWarnings";
+const BAN_UNTIL_KEY = "stevegptBannedUntil";
+const DEFAULT_PLACEHOLDER = "Talk to SteveGPT";
+let banTimer = null;
 let activeRequestController = null;
 let activeRequestId = 0;
 
@@ -304,9 +311,108 @@ function getLocalReply(message) {
   return "That is interesting. Tell me a little more, and I will try to keep up.";
 }
 
-async function getBotReply(message, onChunk, signal) {
+function getBanUntil() {
+  return Number(localStorage.getItem(BAN_UNTIL_KEY) || "0");
+}
+
+function getBanMessage(message = "") {
+  return /[\u3400-\u9fff]/.test(message) ? BAN_MESSAGE_ZH : BAN_MESSAGE_EN;
+}
+
+function formatRemainingTime(milliseconds) {
+  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${seconds}`;
+}
+
+function setChatLocked(locked, remaining = 0) {
+  chatInput.disabled = locked;
+  submitButton.disabled = locked;
+  chatInput.placeholder = locked ? `Banned for ${formatRemainingTime(remaining)}` : DEFAULT_PLACEHOLDER;
+}
+
+function updateBanState() {
+  const remaining = getBanUntil() - Date.now();
+
+  if (remaining > 0) {
+    setChatLocked(true, remaining);
+    chatStatus.textContent = `Banned for ${formatRemainingTime(remaining)}`;
+    clearTimeout(banTimer);
+    banTimer = setTimeout(updateBanState, 1000);
+    return true;
+  }
+
+  localStorage.removeItem(BAN_UNTIL_KEY);
+  setChatLocked(false);
+  chatStatus.textContent = "Ready to chat";
+  clearTimeout(banTimer);
+  return false;
+}
+
+function normalizeForBanCheck(message) {
+  return String(message || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isTalkingAgainstSteve(message) {
+  const normalizedMessage = normalizeForBanCheck(message);
+  const mentionsSteve = /\bsteve\b|\bhan\b|韩|沐烨|韩某/.test(normalizedMessage);
+
+  if (!mentionsSteve) {
+    return false;
+  }
+
+  const antiStevePatterns = [
+    /\b(bad|trash|garbage|stupid|dumb|idiot|sucks|loser|terrible|awful|cringe|ugly|mid|ass)\b/,
+    /嘴硬|防爆钢板|垃圾|废物|傻|蠢|菜|烂|不行|恶心|抽象|逆天|离谱|弱|笨|丑|装|封我/
+  ];
+
+  return antiStevePatterns.some((pattern) => pattern.test(normalizedMessage));
+}
+
+function trackAntiSteveWarning(message) {
+  if (!isTalkingAgainstSteve(message)) {
+    return false;
+  }
+
+  const warnings = Number(localStorage.getItem(BAN_WARNING_KEY) || "0") + 1;
+
+  if (warnings >= 3) {
+    localStorage.setItem(BAN_WARNING_KEY, "0");
+    localStorage.setItem(BAN_UNTIL_KEY, String(Date.now() + BAN_DURATION_MS));
+    updateBanState();
+    return true;
+  }
+
+  localStorage.setItem(BAN_WARNING_KEY, String(warnings));
+  return false;
+}
+
+function startBan() {
+  localStorage.setItem(BAN_WARNING_KEY, "0");
+  localStorage.setItem(BAN_UNTIL_KEY, String(Date.now() + BAN_DURATION_MS));
+  updateBanState();
+}
+
+function isBanReply(reply) {
+  const normalizedReply = String(reply || "")
+    .replace(/\*/g, "")
+    .toLowerCase();
+
+  return normalizedReply.includes("you are banned from using stevegpt")
+    || normalizedReply.includes("你已被禁止使用韩某gpt");
+}
+
+async function getBotReply(message) {
   if (!CHAT_API_ENDPOINT) {
-    return getLocalReply(message);
+    return {
+      reply: getLocalReply(message),
+      banned: false
+    };
   }
 
   const response = await fetch(CHAT_API_ENDPOINT, {
@@ -318,7 +424,7 @@ async function getBotReply(message, onChunk, signal) {
       message,
       messages: conversation
     }),
-    signal
+    signal: activeRequestController?.signal
   });
 
   if (!response.ok) {
@@ -326,18 +432,22 @@ async function getBotReply(message, onChunk, signal) {
   }
 
   if (response.body && response.headers.get("content-type")?.includes("text/event-stream")) {
-    return readReplyStream(response, onChunk);
+    return readReplyStream(response);
   }
 
   const data = await response.json();
-  return data.reply || getLocalReply(message);
+  return {
+    reply: data.reply || getLocalReply(message),
+    banned: Boolean(data.banned)
+  };
 }
 
-async function readReplyStream(response, onChunk) {
+async function readReplyStream(response) {
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
   let fullReply = "";
+  let banned = false;
 
   while (true) {
     const { value, done } = await reader.read();
@@ -363,24 +473,35 @@ async function readReplyStream(response, onChunk) {
 
       try {
         const data = JSON.parse(payload);
+
+        if (data.banned) {
+          banned = true;
+          continue;
+        }
+
         const chunk = data.delta || data.reply || "";
 
         if (chunk) {
           fullReply += chunk;
-          onChunk(fullReply);
         }
       } catch {
         fullReply += payload;
-        onChunk(fullReply);
       }
     }
   }
 
-  return fullReply.trim();
+  return {
+    reply: fullReply.trim(),
+    banned: banned || isBanReply(fullReply)
+  };
 }
 
 chatForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+
+  if (updateBanState()) {
+    return;
+  }
 
   const message = chatInput.value.trim();
   if (!message) {
@@ -388,25 +509,32 @@ chatForm.addEventListener("submit", async (event) => {
   }
 
   chatInput.value = "";
-  chatInput.disabled = true;
-  submitButton.disabled = true;
-  chatStatus.textContent = "Generating...";
+  chatStatus.textContent = "Thinking...";
   addMessage(message, "user");
   conversation.push({ role: "user", content: message });
+
+  if (!CHAT_API_ENDPOINT && trackAntiSteveWarning(message)) {
+    return;
+  }
 
   activeRequestController?.abort();
   activeRequestController = new AbortController();
   const requestId = ++activeRequestId;
+
+  chatInput.disabled = true;
+  submitButton.disabled = true;
   const replyMessage = addMessage("", "bot", "streaming");
 
   try {
-    const reply = await getBotReply(message, (partialReply) => {
-      if (requestId === activeRequestId) {
-        updateBotMessage(replyMessage, partialReply);
-      }
-    }, activeRequestController.signal);
+    const { reply, banned } = await getBotReply(message);
 
     if (requestId !== activeRequestId) {
+      return;
+    }
+
+    if (banned || isBanReply(reply)) {
+      replyMessage.remove();
+      startBan();
       return;
     }
 
@@ -424,7 +552,7 @@ chatForm.addEventListener("submit", async (event) => {
     replyMessage.classList.remove("streaming");
     conversation.push({ role: "assistant", content: localReply });
   } finally {
-    if (requestId === activeRequestId) {
+    if (requestId === activeRequestId && !updateBanState()) {
       activeRequestController = null;
       chatInput.disabled = false;
       submitButton.disabled = false;
@@ -436,20 +564,28 @@ chatForm.addEventListener("submit", async (event) => {
 
 chatExpand.addEventListener("click", () => {
   const isExpanded = chatShell.classList.toggle("is-expanded");
+
+  if (chatExpand.querySelector("svg")) {
+    chatExpand.setAttribute("aria-label", isExpanded ? "Exit fullscreen" : "Enter fullscreen");
+  } else {
+    chatExpand.textContent = isExpanded ? "Small" : "Large";
+  }
+
   chatExpand.setAttribute("aria-pressed", String(isExpanded));
-  chatExpand.setAttribute("aria-label", isExpanded ? "Exit fullscreen" : "Enter fullscreen");
   chatMessages.scrollTop = chatMessages.scrollHeight;
 });
 
-chatClear.addEventListener("click", () => {
+chatClear?.addEventListener("click", () => {
   activeRequestController?.abort();
   activeRequestController = null;
   activeRequestId += 1;
   conversation.length = 0;
+  localStorage.removeItem(BAN_WARNING_KEY);
+  localStorage.removeItem(BAN_UNTIL_KEY);
   chatMessages.replaceChildren();
   addMessage(welcomeMessage, "bot");
-  chatStatus.textContent = "Ready to chat";
-  chatInput.disabled = false;
-  submitButton.disabled = false;
+  updateBanState();
   chatInput.focus();
 });
+
+updateBanState();
