@@ -4,6 +4,7 @@ const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
 const chatMessages = document.getElementById("chatMessages");
 const chatStatus = document.querySelector(".chat-status");
+const chatName = document.querySelector(".chat-name");
 const chatShell = document.querySelector(".chat-shell");
 const chatExpand = document.getElementById("chatExpand");
 const chatClear = document.getElementById("chatClear");
@@ -16,11 +17,13 @@ const BAN_MESSAGE_EN = "**You are banned from using SteveGPT for talking against
 const BAN_MESSAGE_ZH = "**你已被禁止使用韩某GPT**";
 const BAN_WARNING_KEY = "stevegptAntiSteveWarnings";
 const BAN_UNTIL_KEY = "stevegptBannedUntil";
+const CHAT_HISTORY_KEY = "stevegptChatHistory";
 const DEFAULT_PLACEHOLDER = "Talk to SteveGPT";
 let banTimer = null;
 let activeRequestController = null;
 let activeRequestId = 0;
 let activeReplyMessage = null;
+let warningCounter = null;
 
 const localReplies = [
   {
@@ -42,6 +45,7 @@ const localReplies = [
 ];
 
 injectChatRuntimeStyles();
+createWarningCounter();
 setSubmitButtonMode("send");
 
 function injectChatRuntimeStyles() {
@@ -76,15 +80,24 @@ function injectChatRuntimeStyles() {
     }
 
     .chat-message.bot {
-      align-items: flex-start;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      width: 100%;
+    }
+
+    .chat-message.bot .chat-bubble {
+      flex: 0 1 auto;
     }
 
     .chat-reply-actions {
-      align-self: flex-start;
-      display: flex;
-      gap: 6px;
-      margin-top: 6px;
-      padding-left: 3px;
+      position: static !important;
+      align-self: flex-start !important;
+      display: flex !important;
+      gap: 6px !important;
+      margin: 7px 0 0 3px !important;
+      padding: 0 !important;
+      order: 2;
     }
 
     .chat-reply-action {
@@ -105,6 +118,23 @@ function injectChatRuntimeStyles() {
     .chat-reply-action.is-done {
       color: #176a3a !important;
       background: rgba(23, 106, 58, 0.13) !important;
+    }
+
+    .chat-warning-counter {
+      margin-top: 4px;
+      font-size: 0.78rem;
+      line-height: 1.2;
+      font-weight: 650;
+      color: rgba(110, 110, 115, 0.92);
+      letter-spacing: 0;
+    }
+
+    .chat-warning-counter[data-state="warned"] {
+      color: #a15c00;
+    }
+
+    .chat-warning-counter[data-state="banned"] {
+      color: #a21d1d;
     }
 
     .chat-message.streaming .chat-bubble::after {
@@ -132,6 +162,95 @@ function injectChatRuntimeStyles() {
     }
   `;
   document.head.appendChild(style);
+}
+
+function createWarningCounter() {
+  warningCounter = document.querySelector(".chat-warning-counter");
+
+  if (!warningCounter) {
+    warningCounter = document.createElement("div");
+    warningCounter.className = "chat-warning-counter";
+    warningCounter.setAttribute("aria-live", "polite");
+
+    if (chatName?.parentNode) {
+      chatName.parentNode.insertBefore(warningCounter, chatStatus);
+    }
+  }
+
+  renderWarningCounter();
+}
+
+function appendConversation(role, content, sourcePrompt = "") {
+  conversation.push({
+    role,
+    content,
+    ...(sourcePrompt ? { sourcePrompt } : {})
+  });
+  saveConversationHistory();
+}
+
+function replaceConversationReply(sourcePrompt, content) {
+  let replyIndex = -1;
+
+  for (let index = conversation.length - 1; index >= 0; index -= 1) {
+    if (conversation[index].role === "assistant" && conversation[index].sourcePrompt === sourcePrompt) {
+      replyIndex = index;
+      break;
+    }
+  }
+
+  const nextReply = { role: "assistant", content, sourcePrompt };
+
+  if (replyIndex >= 0) {
+    conversation[replyIndex] = nextReply;
+  } else {
+    conversation.push(nextReply);
+  }
+
+  saveConversationHistory();
+}
+
+function saveConversationHistory() {
+  const trimmedHistory = conversation.slice(-40);
+  localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(trimmedHistory));
+}
+
+function loadConversationHistory() {
+  let savedHistory = [];
+
+  try {
+    savedHistory = JSON.parse(localStorage.getItem(CHAT_HISTORY_KEY) || "[]");
+  } catch {
+    savedHistory = [];
+  }
+
+  if (!Array.isArray(savedHistory) || !savedHistory.length) {
+    return;
+  }
+
+  conversation.length = 0;
+  chatMessages.replaceChildren();
+
+  savedHistory
+    .filter((item) => ["user", "assistant"].includes(item?.role) && item.content)
+    .forEach((item) => {
+      const role = item.role === "user" ? "user" : "assistant";
+      const sender = role === "user" ? "user" : "bot";
+      const message = addMessage(String(item.content), sender);
+
+      if (role === "assistant") {
+        updateBotMessage(message, String(item.content), {
+          sourcePrompt: item.sourcePrompt || "",
+          actions: Boolean(item.sourcePrompt)
+        });
+      }
+
+      conversation.push({
+        role,
+        content: String(item.content),
+        ...(item.sourcePrompt ? { sourcePrompt: String(item.sourcePrompt) } : {})
+      });
+    });
 }
 
 function addMessage(text, sender, extraClass = "") {
@@ -515,6 +634,21 @@ function getBanUntil() {
   return Number(localStorage.getItem(BAN_UNTIL_KEY) || "0");
 }
 
+function getWarningCount() {
+  return Math.min(3, Math.max(0, Number(localStorage.getItem(BAN_WARNING_KEY) || "0")));
+}
+
+function renderWarningCounter() {
+  if (!warningCounter) {
+    return;
+  }
+
+  const isBanned = getBanUntil() > Date.now();
+  const warnings = isBanned ? 3 : getWarningCount();
+  warningCounter.textContent = isBanned ? "Warnings: 3/3 locked" : `Warnings: ${warnings}/3`;
+  warningCounter.dataset.state = isBanned ? "banned" : warnings > 0 ? "warned" : "clear";
+}
+
 function getBanMessage(message = "") {
   return /[\u3400-\u9fff]/.test(message) ? BAN_MESSAGE_ZH : BAN_MESSAGE_EN;
 }
@@ -548,6 +682,7 @@ function setChatLocked(locked, remaining = 0) {
   chatInput.disabled = locked;
   setSubmitButtonMode(locked ? "locked" : "send");
   chatInput.placeholder = locked ? `Banned for ${formatRemainingTime(remaining)}` : DEFAULT_PLACEHOLDER;
+  renderWarningCounter();
 }
 
 function updateBanState() {
@@ -565,6 +700,7 @@ function updateBanState() {
   setChatLocked(false);
   chatStatus.textContent = "Ready to chat";
   clearTimeout(banTimer);
+  renderWarningCounter();
   return false;
 }
 
@@ -591,7 +727,9 @@ function isTalkingAgainstSteve(message) {
   return antiStevePatterns.some((pattern) => pattern.test(normalizedMessage));
 }
 
-function trackAntiSteveWarning(message) {
+function trackAntiSteveWarning(message, options = {}) {
+  const enforceBan = options.enforceBan !== false;
+
   if (!isTalkingAgainstSteve(message)) {
     return false;
   }
@@ -599,19 +737,28 @@ function trackAntiSteveWarning(message) {
   const warnings = Number(localStorage.getItem(BAN_WARNING_KEY) || "0") + 1;
 
   if (warnings >= 3) {
+    if (!enforceBan) {
+      localStorage.setItem(BAN_WARNING_KEY, "2");
+      renderWarningCounter();
+      return false;
+    }
+
     localStorage.setItem(BAN_WARNING_KEY, "0");
     localStorage.setItem(BAN_UNTIL_KEY, String(Date.now() + BAN_DURATION_MS));
+    renderWarningCounter();
     updateBanState();
     return true;
   }
 
   localStorage.setItem(BAN_WARNING_KEY, String(warnings));
+  renderWarningCounter();
   return false;
 }
 
 function startBan() {
   localStorage.setItem(BAN_WARNING_KEY, "0");
   localStorage.setItem(BAN_UNTIL_KEY, String(Date.now() + BAN_DURATION_MS));
+  renderWarningCounter();
   updateBanState();
 }
 
@@ -782,7 +929,7 @@ async function regenerateBotReply(messageElement) {
         actions: true
       });
       messageElement.classList.remove("streaming");
-      conversation.push({ role: "assistant", content: finalReply || getBanMessage(prompt) });
+      replaceConversationReply(prompt, finalReply || getBanMessage(prompt));
       startBan();
       return;
     }
@@ -792,7 +939,7 @@ async function regenerateBotReply(messageElement) {
       actions: true
     });
     messageElement.classList.remove("streaming");
-    conversation.push({ role: "assistant", content: finalReply });
+    replaceConversationReply(prompt, finalReply);
   } catch (error) {
     if (error.name === "AbortError") {
       return;
@@ -804,7 +951,7 @@ async function regenerateBotReply(messageElement) {
       actions: true
     });
     messageElement.classList.remove("streaming");
-    conversation.push({ role: "assistant", content: localReply });
+    replaceConversationReply(prompt, localReply);
   } finally {
     if (requestId === activeRequestId) {
       activeRequestController = null;
@@ -840,9 +987,11 @@ chatForm.addEventListener("submit", async (event) => {
   chatInput.value = "";
   chatStatus.textContent = "Thinking...";
   addMessage(message, "user");
-  conversation.push({ role: "user", content: message });
+  appendConversation("user", message);
 
-  if (!CHAT_API_ENDPOINT && trackAntiSteveWarning(message)) {
+  const clientTriggeredBan = trackAntiSteveWarning(message, { enforceBan: !CHAT_API_ENDPOINT });
+
+  if (!CHAT_API_ENDPOINT && clientTriggeredBan) {
     const banReply = getBanMessage(message);
     const replyMessage = addMessage("", "bot", "streaming");
     updateBotMessage(replyMessage, banReply, {
@@ -850,7 +999,7 @@ chatForm.addEventListener("submit", async (event) => {
       actions: true
     });
     replyMessage.classList.remove("streaming");
-    conversation.push({ role: "assistant", content: banReply });
+    appendConversation("assistant", banReply, message);
     return;
   }
 
@@ -881,7 +1030,7 @@ chatForm.addEventListener("submit", async (event) => {
         actions: true
       });
       replyMessage.classList.remove("streaming");
-      conversation.push({ role: "assistant", content: banReply });
+      appendConversation("assistant", banReply, message);
       startBan();
       return;
     }
@@ -892,7 +1041,7 @@ chatForm.addEventListener("submit", async (event) => {
       actions: true
     });
     replyMessage.classList.remove("streaming");
-    conversation.push({ role: "assistant", content: finalReply });
+    appendConversation("assistant", finalReply, message);
   } catch (error) {
     if (error.name === "AbortError") {
       return;
@@ -904,7 +1053,7 @@ chatForm.addEventListener("submit", async (event) => {
       actions: true
     });
     replyMessage.classList.remove("streaming");
-    conversation.push({ role: "assistant", content: localReply });
+    appendConversation("assistant", localReply, message);
   } finally {
     if (requestId === activeRequestId) {
       activeRequestController = null;
@@ -939,6 +1088,7 @@ chatClear?.addEventListener("click", () => {
   activeReplyMessage = null;
   activeRequestId += 1;
   conversation.length = 0;
+  localStorage.removeItem(CHAT_HISTORY_KEY);
   chatMessages.replaceChildren();
   addMessage(welcomeMessage, "bot");
 
@@ -975,4 +1125,5 @@ chatMessages.addEventListener("click", async (event) => {
   }
 });
 
+loadConversationHistory();
 updateBanState();
