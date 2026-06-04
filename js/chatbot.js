@@ -20,6 +20,7 @@ const DEFAULT_PLACEHOLDER = "Talk to SteveGPT";
 let banTimer = null;
 let activeRequestController = null;
 let activeRequestId = 0;
+let activeReplyMessage = null;
 
 const localReplies = [
   {
@@ -39,6 +40,99 @@ const localReplies = [
     response: "yeah np. ask the actual thing tho."
   }
 ];
+
+injectChatRuntimeStyles();
+setSubmitButtonMode("send");
+
+function injectChatRuntimeStyles() {
+  const style = document.createElement("style");
+  style.textContent = `
+    .chat-form button {
+      width: 50px;
+      min-width: 50px;
+      height: 50px;
+      min-height: 50px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 999px;
+    }
+
+    .chat-form button svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.35;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .chat-form button[data-mode="stop"] svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+      stroke: none;
+    }
+
+    .chat-message.bot {
+      align-items: flex-start;
+    }
+
+    .chat-reply-actions {
+      align-self: flex-start;
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      padding-left: 3px;
+    }
+
+    .chat-reply-action {
+      transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease;
+    }
+
+    .chat-reply-action:hover {
+      color: #1b1b1f !important;
+      background: rgba(17, 17, 17, 0.07) !important;
+      transform: translateY(-1px);
+    }
+
+    .chat-reply-action:active {
+      transform: translateY(0) scale(0.9);
+      background: rgba(17, 17, 17, 0.12) !important;
+    }
+
+    .chat-reply-action.is-done {
+      color: #176a3a !important;
+      background: rgba(23, 106, 58, 0.13) !important;
+    }
+
+    .chat-message.streaming .chat-bubble::after {
+      content: "";
+      display: inline-block;
+      width: 0.42em;
+      height: 1.05em;
+      margin-left: 0.18em;
+      border-radius: 999px;
+      background: currentColor;
+      vertical-align: -0.18em;
+      animation: stevegptCaret 1.05s cubic-bezier(.4, 0, .2, 1) infinite;
+      transform-origin: center;
+    }
+
+    @keyframes stevegptCaret {
+      0%, 100% {
+        opacity: 0.3;
+        transform: scaleY(0.72);
+      }
+      45% {
+        opacity: 1;
+        transform: scaleY(1);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 function addMessage(text, sender, extraClass = "") {
   const message = document.createElement("div");
@@ -147,6 +241,34 @@ function regenerateIconSvg() {
     "<path d=\"M21 3v6h-6\"></path>",
     "</svg>"
   ].join("");
+}
+
+function sendIconSvg() {
+  return [
+    "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
+    "<path d=\"M22 2 11 13\"></path>",
+    "<path d=\"m22 2-7 20-4-9-9-4 20-7Z\"></path>",
+    "</svg>"
+  ].join("");
+}
+
+function stopIconSvg() {
+  return [
+    "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
+    "<rect x=\"6\" y=\"6\" width=\"12\" height=\"12\" rx=\"2\"></rect>",
+    "</svg>"
+  ].join("");
+}
+
+function setSubmitButtonMode(mode) {
+  const isStop = mode === "stop";
+  const isLocked = mode === "locked";
+
+  submitButton.dataset.mode = mode;
+  submitButton.innerHTML = isStop ? stopIconSvg() : sendIconSvg();
+  submitButton.disabled = isLocked;
+  submitButton.setAttribute("aria-label", isStop ? "Stop response" : "Send message");
+  submitButton.title = isStop ? "Stop response" : "Send message";
 }
 
 function formatBotReply(text) {
@@ -424,7 +546,7 @@ function formatRemainingTime(milliseconds) {
 
 function setChatLocked(locked, remaining = 0) {
   chatInput.disabled = locked;
-  submitButton.disabled = locked;
+  setSubmitButtonMode(locked ? "locked" : "send");
   chatInput.placeholder = locked ? `Banned for ${formatRemainingTime(remaining)}` : DEFAULT_PLACEHOLDER;
 }
 
@@ -502,10 +624,12 @@ function isBanReply(reply) {
     || normalizedReply.includes("你已被禁止使用韩某gpt");
 }
 
-async function getBotReply(message) {
+async function getBotReply(message, onChunk = () => {}) {
   if (!CHAT_API_ENDPOINT) {
+    const localReply = getLocalReply(message);
+    onChunk(localReply);
     return {
-      reply: getLocalReply(message),
+      reply: localReply,
       banned: false
     };
   }
@@ -527,17 +651,19 @@ async function getBotReply(message) {
   }
 
   if (response.body && response.headers.get("content-type")?.includes("text/event-stream")) {
-    return readReplyStream(response);
+    return readReplyStream(response, onChunk);
   }
 
   const data = await response.json();
+  const reply = data.reply || getLocalReply(message);
+  onChunk(reply);
   return {
-    reply: data.reply || getLocalReply(message),
+    reply,
     banned: Boolean(data.banned)
   };
 }
 
-async function readReplyStream(response) {
+async function readReplyStream(response, onChunk = () => {}) {
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
@@ -578,9 +704,11 @@ async function readReplyStream(response) {
 
         if (chunk) {
           fullReply += chunk;
+          onChunk(fullReply);
         }
       } catch {
         fullReply += payload;
+        onChunk(fullReply);
       }
     }
   }
@@ -589,6 +717,28 @@ async function readReplyStream(response) {
     reply: fullReply.trim(),
     banned: banned || isBanReply(fullReply)
   };
+}
+
+function stopActiveResponse() {
+  if (!activeRequestController) {
+    return;
+  }
+
+  activeRequestController.abort();
+  activeRequestController = null;
+  activeRequestId += 1;
+
+  if (activeReplyMessage) {
+    activeReplyMessage.classList.remove("streaming");
+    activeReplyMessage = null;
+  }
+
+  if (!updateBanState()) {
+    chatInput.disabled = false;
+    setSubmitButtonMode("send");
+    chatStatus.textContent = "Ready to chat";
+    chatInput.focus();
+  }
 }
 
 async function regenerateBotReply(messageElement) {
@@ -607,13 +757,18 @@ async function regenerateBotReply(messageElement) {
   const requestId = ++activeRequestId;
 
   chatInput.disabled = true;
-  submitButton.disabled = true;
+  setSubmitButtonMode("stop");
+  activeReplyMessage = messageElement;
   chatStatus.textContent = "Regenerating...";
   updateBotMessage(messageElement, "SteveGPT is thinking...");
   messageElement.classList.add("streaming");
 
   try {
-    const { reply, banned } = await getBotReply(prompt);
+    const { reply, banned } = await getBotReply(prompt, (partialReply) => {
+      if (requestId === activeRequestId) {
+        updateBotMessage(messageElement, partialReply, { sourcePrompt: prompt });
+      }
+    });
 
     if (requestId !== activeRequestId) {
       return;
@@ -651,18 +806,27 @@ async function regenerateBotReply(messageElement) {
     messageElement.classList.remove("streaming");
     conversation.push({ role: "assistant", content: localReply });
   } finally {
-    if (requestId === activeRequestId && !updateBanState()) {
+    if (requestId === activeRequestId) {
       activeRequestController = null;
-      chatInput.disabled = false;
-      submitButton.disabled = false;
-      chatStatus.textContent = "Ready to chat";
-      chatInput.focus();
+      activeReplyMessage = null;
+
+      if (!updateBanState()) {
+        chatInput.disabled = false;
+        setSubmitButtonMode("send");
+        chatStatus.textContent = "Ready to chat";
+        chatInput.focus();
+      }
     }
   }
 }
 
 chatForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+
+  if (activeRequestController) {
+    stopActiveResponse();
+    return;
+  }
 
   if (updateBanState()) {
     return;
@@ -695,11 +859,16 @@ chatForm.addEventListener("submit", async (event) => {
   const requestId = ++activeRequestId;
 
   chatInput.disabled = true;
-  submitButton.disabled = true;
+  setSubmitButtonMode("stop");
   const replyMessage = addMessage("", "bot", "streaming");
+  activeReplyMessage = replyMessage;
 
   try {
-    const { reply, banned } = await getBotReply(message);
+    const { reply, banned } = await getBotReply(message, (partialReply) => {
+      if (requestId === activeRequestId) {
+        updateBotMessage(replyMessage, partialReply, { sourcePrompt: message });
+      }
+    });
 
     if (requestId !== activeRequestId) {
       return;
@@ -737,12 +906,16 @@ chatForm.addEventListener("submit", async (event) => {
     replyMessage.classList.remove("streaming");
     conversation.push({ role: "assistant", content: localReply });
   } finally {
-    if (requestId === activeRequestId && !updateBanState()) {
+    if (requestId === activeRequestId) {
       activeRequestController = null;
-      chatInput.disabled = false;
-      submitButton.disabled = false;
-      chatStatus.textContent = "Ready to chat";
-      chatInput.focus();
+      activeReplyMessage = null;
+
+      if (!updateBanState()) {
+        chatInput.disabled = false;
+        setSubmitButtonMode("send");
+        chatStatus.textContent = "Ready to chat";
+        chatInput.focus();
+      }
     }
   }
 });
@@ -763,11 +936,11 @@ chatExpand.addEventListener("click", () => {
 chatClear?.addEventListener("click", () => {
   activeRequestController?.abort();
   activeRequestController = null;
+  activeReplyMessage = null;
   activeRequestId += 1;
   conversation.length = 0;
   chatMessages.replaceChildren();
   addMessage(welcomeMessage, "bot");
-  updateBanState();
 
   if (!updateBanState()) {
     chatInput.focus();
