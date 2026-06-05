@@ -6,7 +6,10 @@
 
   const style = document.createElement("style");
   style.textContent = `
+    html,
     body {
+      width: 100%;
+      min-height: 100%;
       overflow: hidden !important;
     }
 
@@ -14,65 +17,64 @@
     .hero-subtitle,
     .ambient,
     .chat-expand,
-    .chat-warning-counter {
+    .chat-status,
+    .chat-warning-counter,
+    .chat-message.user .chat-reply-actions {
       display: none !important;
     }
 
     .page,
     .hero,
     .hero-inner,
-    .hero-copy {
+    .hero-copy,
+    .chat-shell {
       width: 100vw !important;
       max-width: none !important;
       min-height: 100dvh !important;
       padding: 0 !important;
       margin: 0 !important;
-    }
-
-    .hero {
-      align-items: stretch !important;
-    }
-
-    .hero-inner {
-      display: flex !important;
-      justify-content: center !important;
-      align-items: stretch !important;
-    }
-
-    .hero-copy {
-      display: flex !important;
-      justify-content: center !important;
-      align-items: stretch !important;
-    }
-
-    .chat-shell {
-      width: min(920px, 100vw) !important;
-      height: 100dvh !important;
-      margin: 0 auto !important;
       border: 0 !important;
       border-radius: 0 !important;
       box-shadow: none !important;
       background: transparent !important;
+    }
+
+    .hero,
+    .hero-inner,
+    .hero-copy {
+      display: block !important;
+    }
+
+    .chat-shell {
+      height: 100dvh !important;
       display: grid !important;
       grid-template-rows: auto minmax(0, 1fr) auto !important;
       overflow: hidden !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
     }
 
     .chat-header {
-      padding: 18px 22px 14px !important;
-      border-bottom: 0 !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      z-index: 20 !important;
+      padding: 22px 40px 10px !important;
+      border: 0 !important;
+      background: transparent !important;
+      pointer-events: none;
     }
 
     .chat-name {
       font-size: 1.08rem !important;
-    }
-
-    .chat-status {
-      display: none !important;
+      line-height: 1 !important;
+      pointer-events: auto;
     }
 
     .chat-actions {
       margin-left: auto !important;
+      pointer-events: auto;
     }
 
     .chat-clear {
@@ -81,23 +83,26 @@
     }
 
     .chat-messages {
-      position: relative !important;
+      width: min(1500px, calc(100vw - 96px)) !important;
       height: auto !important;
       min-height: 0 !important;
-      padding: 16px 22px 20px !important;
+      margin: 0 auto !important;
+      padding: 92px 0 24px !important;
+      position: relative !important;
     }
 
     .chat-empty-state {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
+      position: fixed;
+      top: 37vh;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(760px, calc(100vw - 44px));
       pointer-events: none;
       color: rgba(27, 27, 31, 0.78);
       font-size: clamp(1.7rem, 4vw, 2.8rem);
       font-weight: 700;
       text-align: center;
-      padding: 24px;
+      line-height: 1.12;
     }
 
     .chat-empty-state[hidden] {
@@ -105,9 +110,21 @@
     }
 
     .chat-form {
+      width: min(840px, calc(100vw - 96px)) !important;
+      margin: 0 auto !important;
       grid-template-columns: minmax(0, 1fr) auto !important;
       align-items: center !important;
-      padding: 14px 18px 18px !important;
+      padding: 14px 0 18px !important;
+      border-top: 0 !important;
+      background: transparent !important;
+    }
+
+    body.chat-is-empty .chat-form {
+      position: fixed !important;
+      left: 50% !important;
+      top: 56vh !important;
+      transform: translateX(-50%) !important;
+      z-index: 10 !important;
     }
 
     .chat-form button[data-mode="stop"] svg {
@@ -127,31 +144,26 @@
       width: fit-content !important;
     }
 
-    .chat-message.user .chat-reply-actions {
-      align-self: flex-end !important;
-      display: flex !important;
-      gap: 4px !important;
-      margin: 3px 4px 0 0 !important;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.16s ease, transform 0.16s ease;
-      transform: translateY(-2px);
-    }
-
-    .chat-message.user:hover .chat-reply-actions,
-    .chat-message.user:focus-within .chat-reply-actions {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
-    }
-
     @media (max-width: 680px) {
-      .chat-shell {
-        width: 100vw !important;
+      .chat-header {
+        padding: 18px 20px 8px !important;
       }
 
-      .chat-form {
+      .chat-messages {
+        width: calc(100vw - 32px) !important;
+        padding-top: 76px !important;
+      }
+
+      .chat-form,
+      body.chat-is-empty .chat-form {
+        width: calc(100vw - 32px) !important;
         grid-template-columns: minmax(0, 1fr) auto !important;
+        position: static !important;
+        transform: none !important;
+      }
+
+      .chat-empty-state {
+        top: 42vh;
       }
     }
   `;
@@ -160,35 +172,11 @@
   const chatMessages = document.getElementById("chatMessages");
   const chatInput = document.getElementById("chatInput");
   document.getElementById("chatExpand")?.remove();
+
   let emptyState = null;
 
-  function createCopyIcon() {
-    return [
-      "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
-      "<rect x=\"8\" y=\"8\" width=\"12\" height=\"12\" rx=\"2\"></rect>",
-      "<path d=\"M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2\"></path>",
-      "</svg>"
-    ].join("");
-  }
-
-  function createCopyButton(textProvider) {
-    const button = document.createElement("button");
-    button.className = "chat-reply-action user-copy-action";
-    button.type = "button";
-    button.title = "Copy";
-    button.setAttribute("aria-label", "Copy message");
-    button.innerHTML = createCopyIcon();
-    button.addEventListener("click", async () => {
-      const text = textProvider();
-      try {
-        await navigator.clipboard?.writeText(text);
-        button.classList.add("is-done");
-        setTimeout(() => button.classList.remove("is-done"), 900);
-      } catch {
-        button.classList.remove("is-done");
-      }
-    });
-    return button;
+  function isBanned() {
+    return Number(localStorage.getItem(BAN_UNTIL_KEY) || "0") > Date.now();
   }
 
   function ensureEmptyState() {
@@ -198,7 +186,6 @@
 
     emptyState = document.createElement("div");
     emptyState.className = "chat-empty-state";
-    emptyState.textContent = "Where should we begin?";
     chatMessages.appendChild(emptyState);
   }
 
@@ -216,6 +203,14 @@
     }
   }
 
+  function cleanRegenerateThinkingText() {
+    chatMessages.querySelectorAll(".chat-message.bot.streaming .chat-bubble").forEach((bubble) => {
+      if ((bubble.textContent || "").trim() === "SteveGPT is thinking...") {
+        bubble.textContent = "";
+      }
+    });
+  }
+
   function updateEmptyState() {
     ensureEmptyState();
 
@@ -225,34 +220,15 @@
 
     const hasMessages = Boolean(chatMessages.querySelector(".chat-message"));
     const hasDraft = Boolean(chatInput?.value.trim());
-    emptyState.hidden = hasMessages || hasDraft;
-  }
+    const banned = isBanned();
 
-  function addUserCopyActions() {
-    chatMessages.querySelectorAll(".chat-message.user").forEach((message) => {
-      if (message.querySelector(".user-copy-action")) {
-        return;
-      }
-
-      const bubble = message.querySelector(".chat-bubble");
-      const actions = document.createElement("div");
-      actions.className = "chat-reply-actions user-reply-actions";
-      actions.appendChild(createCopyButton(() => bubble?.textContent || ""));
-      message.appendChild(actions);
-    });
-  }
-
-  function cleanRegenerateThinkingText() {
-    chatMessages.querySelectorAll(".chat-message.bot.streaming .chat-bubble").forEach((bubble) => {
-      if ((bubble.textContent || "").trim() === "SteveGPT is thinking...") {
-        bubble.textContent = "";
-      }
-    });
+    emptyState.textContent = banned ? "You are currently banned" : "Where should we begin?";
+    emptyState.hidden = hasMessages || (!banned && hasDraft);
+    document.body.classList.toggle("chat-is-empty", !hasMessages);
   }
 
   function refreshChatPolish() {
     removeDefaultStarterIfEmpty();
-    addUserCopyActions();
     cleanRegenerateThinkingText();
     updateEmptyState();
   }
@@ -290,5 +266,8 @@
   chatInput?.addEventListener("input", updateEmptyState);
   refreshChatPolish();
   stepDownWarningAfterBan();
-  setInterval(stepDownWarningAfterBan, 1000);
+  setInterval(() => {
+    stepDownWarningAfterBan();
+    updateEmptyState();
+  }, 1000);
 })();
