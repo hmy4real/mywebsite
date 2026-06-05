@@ -5,6 +5,7 @@ const chatInput = document.getElementById("chatInput");
 const chatMessages = document.getElementById("chatMessages");
 const chatClear = document.getElementById("chatClear");
 const chatEmptyState = document.getElementById("chatEmptyState");
+const chatShell = document.querySelector(".chat-shell");
 const submitButton = chatForm.querySelector("button");
 
 const CHAT_HISTORY_KEY = "stevegptChatHistory";
@@ -41,13 +42,57 @@ const localReplies = [
   }
 ];
 
+initWallpaperGlows();
 setSubmitButtonMode("send");
+
+function initWallpaperGlows() {
+  const ambient = document.querySelector(".ambient");
+
+  if (!ambient) {
+    return;
+  }
+
+  const randomBetween = (min, max) => min + Math.random() * (max - min);
+  const glowCount = Math.floor(randomBetween(5, 8));
+  const fragment = document.createDocumentFragment();
+
+  ambient.replaceChildren();
+
+  for (let index = 0; index < glowCount; index += 1) {
+    const glow = document.createElement("div");
+    const size = randomBetween(120, 310);
+    const alpha = randomBetween(0.12, 0.28);
+    const driftX = randomBetween(-90, 90);
+    const driftY = randomBetween(-70, 70);
+
+    glow.className = "wallpaper-glow";
+    glow.style.setProperty("--x", `${randomBetween(4, 96)}vw`);
+    glow.style.setProperty("--y", `${randomBetween(8, 94)}vh`);
+    glow.style.setProperty("--size", `${size}px`);
+    glow.style.setProperty("--blur", `${randomBetween(34, 72)}px`);
+    glow.style.setProperty("--alpha", alpha.toFixed(3));
+    glow.style.setProperty("--duration", `${randomBetween(18, 36)}s`);
+    glow.style.setProperty("--delay", `${randomBetween(-18, 0)}s`);
+    glow.style.setProperty("--drift-x", `${driftX.toFixed(1)}px`);
+    glow.style.setProperty("--drift-y", `${driftY.toFixed(1)}px`);
+    glow.style.setProperty("--scale-start", randomBetween(0.86, 1.08).toFixed(3));
+    glow.style.setProperty("--scale-mid", randomBetween(1.02, 1.24).toFixed(3));
+    glow.style.setProperty("--scale-end", randomBetween(0.8, 1.02).toFixed(3));
+    glow.style.setProperty("--opacity-start", randomBetween(0.26, 0.52).toFixed(3));
+    glow.style.setProperty("--opacity-mid", randomBetween(0.38, 0.72).toFixed(3));
+    glow.style.setProperty("--opacity-end", randomBetween(0.2, 0.46).toFixed(3));
+
+    fragment.appendChild(glow);
+  }
+
+  ambient.appendChild(fragment);
+}
 
 function sendIconSvg() {
   return [
     "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
-    "<path d=\"M22 2 11 13\"></path>",
-    "<path d=\"m22 2-7 20-4-9-9-4 20-7Z\"></path>",
+    "<path d=\"M12 19V5\"></path>",
+    "<path d=\"m5 12 7-7 7 7\"></path>",
     "</svg>"
   ].join("");
 }
@@ -65,6 +110,14 @@ function copyIconSvg() {
     "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
     "<rect x=\"8\" y=\"8\" width=\"12\" height=\"12\" rx=\"2\"></rect>",
     "<path d=\"M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2\"></path>",
+    "</svg>"
+  ].join("");
+}
+
+function checkIconSvg() {
+  return [
+    "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
+    "<path d=\"m20 6-11 11-5-5\"></path>",
     "</svg>"
   ].join("");
 }
@@ -103,10 +156,9 @@ function setWarningCount(count) {
 
 function formatRemainingTime(milliseconds) {
   const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const minutes = Math.floor(totalSeconds / 60);
   const seconds = String(totalSeconds % 60).padStart(2, "0");
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${seconds}`;
+  return `${String(minutes).padStart(2, "0")}:${seconds}`;
 }
 
 function setChatLocked(locked, remaining = 0) {
@@ -125,11 +177,10 @@ function updateEmptyState() {
   }
 
   const hasMessages = Boolean(chatMessages.querySelector(".chat-message"));
-  const hasDraft = Boolean(chatInput.value.trim());
   const banned = getBanUntil() > Date.now();
 
   chatEmptyState.textContent = banned ? "You are currently banned" : "Where should we begin?";
-  chatEmptyState.hidden = hasMessages || (!banned && hasDraft);
+  chatEmptyState.hidden = hasMessages;
   document.body.classList.toggle("chat-is-empty", !hasMessages);
 }
 
@@ -223,6 +274,14 @@ function saveConversationHistory() {
   localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(conversation.slice(-40)));
 }
 
+function scrollChatToBottom() {
+  const scroller = chatShell || document.scrollingElement || document.documentElement;
+
+  requestAnimationFrame(() => {
+    scroller.scrollTop = scroller.scrollHeight;
+  });
+}
+
 function appendConversation(role, content, sourcePrompt = "") {
   conversation.push({
     role,
@@ -233,9 +292,14 @@ function appendConversation(role, content, sourcePrompt = "") {
 }
 
 function replaceConversationReply(sourcePrompt, content) {
-  const replyIndex = conversation.findLastIndex((item) => (
-    item.role === "assistant" && item.sourcePrompt === sourcePrompt
-  ));
+  let replyIndex = -1;
+
+  for (let index = conversation.length - 1; index >= 0; index -= 1) {
+    if (conversation[index].role === "assistant" && conversation[index].sourcePrompt === sourcePrompt) {
+      replyIndex = index;
+      break;
+    }
+  }
 
   const nextReply = { role: "assistant", content, sourcePrompt };
 
@@ -246,6 +310,42 @@ function replaceConversationReply(sourcePrompt, content) {
   }
 
   saveConversationHistory();
+}
+
+function pruneChatAfterMessage(messageElement) {
+  const messages = [...chatMessages.querySelectorAll(".chat-message")];
+  const targetIndex = messages.indexOf(messageElement);
+
+  if (targetIndex < 0) {
+    return;
+  }
+
+  messages.slice(targetIndex + 1).forEach((message) => {
+    message.remove();
+  });
+
+  conversation.length = 0;
+
+  messages.slice(0, targetIndex).forEach((message) => {
+    if (message.classList.contains("user")) {
+      conversation.push({
+        role: "user",
+        content: message.querySelector(".chat-bubble")?.textContent || ""
+      });
+      return;
+    }
+
+    if (message.classList.contains("bot") && message.dataset.reply) {
+      conversation.push({
+        role: "assistant",
+        content: message.dataset.reply,
+        ...(message.dataset.sourcePrompt ? { sourcePrompt: message.dataset.sourcePrompt } : {})
+      });
+    }
+  });
+
+  saveConversationHistory();
+  updateEmptyState();
 }
 
 function addMessage(text, sender, extraClass = "") {
@@ -263,7 +363,7 @@ function addMessage(text, sender, extraClass = "") {
 
   message.appendChild(bubble);
   chatMessages.appendChild(message);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+  scrollChatToBottom();
   updateEmptyState();
   return message;
 }
@@ -286,7 +386,7 @@ function updateBotMessage(message, text, options = {}) {
     addReplyActions(message);
   }
 
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+  scrollChatToBottom();
   updateEmptyState();
 }
 
@@ -341,8 +441,103 @@ function formatBotReply(text) {
     : html;
 
   restoreMathBlocks(wrapper, mathBlocks);
+  highlightCodeBlocks(wrapper);
+  addCodeCopyButtons(wrapper);
   polishRenderedLinks(wrapper);
   return wrapper;
+}
+
+function highlightCodeBlocks(container) {
+  container.querySelectorAll("pre code").forEach((code) => {
+    if (window.hljs) {
+      window.hljs.highlightElement(code);
+
+      if (code.querySelector(".hljs-keyword, .hljs-string, .hljs-number, .hljs-title, .hljs-built_in")) {
+        return;
+      }
+    }
+
+    fallbackHighlightCode(code);
+  });
+}
+
+function fallbackHighlightCode(code) {
+  const source = code.textContent;
+  const language = [...code.classList].find((className) => className.startsWith("language-"))?.slice(9) || "";
+
+  if (!/python|py/i.test(language) && !/\b(def|return|import|for|while|if|elif|else|class|print)\b/.test(source)) {
+    return;
+  }
+
+  const protectedPieces = [];
+  const protect = (html) => {
+    const token = `%%STEVEGPT_SYNTAX_${protectedPieces.length}%%`;
+    protectedPieces.push(html);
+    return token;
+  };
+
+  let highlighted = escapeHtml(source)
+    .replace(/(&quot;.*?&quot;|&#039;.*?&#039;)/g, (match) => protect(`<span class="syntax-string">${match}</span>`))
+    .replace(/(#.*)$/gm, (match) => protect(`<span class="syntax-comment">${match}</span>`));
+
+  highlighted = highlighted
+    .replace(/\b(def|return|import|from|as|for|while|if|elif|else|class|in|not|and|or|None|True|False)\b/g, "<span class=\"syntax-keyword\">$1</span>")
+    .replace(/\b([A-Za-z_]\w*)(?=\()/g, "<span class=\"syntax-function\">$1</span>")
+    .replace(/\b(\d+(?:\.\d+)?)\b/g, "<span class=\"syntax-number\">$1</span>");
+
+  code.innerHTML = highlighted.replace(/%%STEVEGPT_SYNTAX_(\d+)%%/g, (_, index) => protectedPieces[Number(index)] || "");
+}
+
+function addCodeCopyButtons(container) {
+  container.querySelectorAll("pre").forEach((pre) => {
+    if (pre.closest(".code-frame")) {
+      return;
+    }
+
+    const code = pre.querySelector("code");
+
+    if (!code) {
+      return;
+    }
+
+    const button = document.createElement("button");
+    button.className = "code-copy";
+    button.type = "button";
+    button.setAttribute("aria-label", "Copy code");
+    button.title = "Copy code";
+    button.innerHTML = copyIconSvg();
+    button.addEventListener("click", async () => {
+      try {
+        await copyText(code.textContent || "");
+        button.classList.add("is-done");
+        button.innerHTML = checkIconSvg();
+        setTimeout(() => {
+          button.classList.remove("is-done");
+          button.innerHTML = copyIconSvg();
+        }, 900);
+      } catch {
+        button.classList.remove("is-done");
+      }
+    });
+
+    const frame = document.createElement("div");
+    frame.className = "code-frame";
+    pre.parentNode.insertBefore(frame, pre);
+    frame.append(pre, button);
+
+    updateCodeFrameScrollState(frame, pre);
+    requestAnimationFrame(() => updateCodeFrameScrollState(frame, pre));
+    pre.addEventListener("scroll", () => updateCodeFrameScrollState(frame, pre), { passive: true });
+    window.addEventListener("resize", () => updateCodeFrameScrollState(frame, pre), { passive: true });
+  });
+}
+
+function updateCodeFrameScrollState(frame, pre) {
+  const maxScroll = pre.scrollWidth - pre.clientWidth;
+  const scrollLeft = pre.scrollLeft;
+
+  frame.classList.toggle("can-scroll-left", scrollLeft > 1);
+  frame.classList.toggle("can-scroll-right", maxScroll - scrollLeft > 1);
 }
 
 function normalizeReplyParagraphs(text) {
@@ -616,6 +811,31 @@ async function readReplyStream(response, onChunk = () => {}) {
   let fullReply = "";
   let banned = false;
 
+  function handlePayload(payload) {
+    if (!payload || payload === "[DONE]") {
+      return;
+    }
+
+    try {
+      const data = JSON.parse(payload);
+
+      if (data.banned) {
+        banned = true;
+        return;
+      }
+
+      const chunk = data.delta || data.reply || "";
+
+      if (chunk) {
+        fullReply += chunk;
+        onChunk(fullReply);
+      }
+    } catch {
+      fullReply += payload;
+      onChunk(fullReply);
+    }
+  }
+
   while (true) {
     const { value, done } = await reader.read();
 
@@ -633,30 +853,12 @@ async function readReplyStream(response, onChunk = () => {}) {
       }
 
       const payload = line.slice(5).trim();
-
-      if (!payload || payload === "[DONE]") {
-        continue;
-      }
-
-      try {
-        const data = JSON.parse(payload);
-
-        if (data.banned) {
-          banned = true;
-          continue;
-        }
-
-        const chunk = data.delta || data.reply || "";
-
-        if (chunk) {
-          fullReply += chunk;
-          onChunk(fullReply);
-        }
-      } catch {
-        fullReply += payload;
-        onChunk(fullReply);
-      }
+      handlePayload(payload);
     }
+  }
+
+  if (buffer.trim().startsWith("data:")) {
+    handlePayload(buffer.trim().slice(5).trim());
   }
 
   return {
@@ -733,6 +935,13 @@ async function runReply(prompt, messageElement, replaceExisting = false) {
       : appendConversation("assistant", finalReply, prompt);
   } catch (error) {
     if (error.name === "AbortError") {
+      const hasReplyText = Boolean((messageElement.dataset.reply || messageElement.textContent || "").trim());
+
+      if (!hasReplyText) {
+        messageElement.remove();
+        updateEmptyState();
+      }
+
       return;
     }
 
@@ -882,6 +1091,7 @@ chatMessages.addEventListener("click", async (event) => {
     const prompt = message.dataset.sourcePrompt;
 
     if (prompt) {
+      pruneChatAfterMessage(message);
       await runReply(prompt, message, true);
     }
   }
