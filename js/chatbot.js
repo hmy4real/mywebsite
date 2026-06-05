@@ -3,27 +3,24 @@ const CHAT_API_ENDPOINT = window.STEVEGPT_API_ENDPOINT || "/api/chat";
 const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
 const chatMessages = document.getElementById("chatMessages");
-const chatStatus = document.querySelector(".chat-status");
-const chatName = document.querySelector(".chat-name");
-const chatShell = document.querySelector(".chat-shell");
-const chatExpand = document.getElementById("chatExpand");
 const chatClear = document.getElementById("chatClear");
+const chatEmptyState = document.getElementById("chatEmptyState");
 const submitButton = chatForm.querySelector("button");
 
-const conversation = [];
-const welcomeMessage = "Hi, I am SteveGPT. Ask me anything about this capstone demo.";
-const BAN_DURATION_MS = 5 * 60 * 1000;
-const BAN_MESSAGE_EN = "**You are banned from using SteveGPT for talking against Steve**";
-const BAN_MESSAGE_ZH = "**你已被禁止使用韩某GPT**";
+const CHAT_HISTORY_KEY = "stevegptChatHistory";
 const BAN_WARNING_KEY = "stevegptAntiSteveWarnings";
 const BAN_UNTIL_KEY = "stevegptBannedUntil";
-const CHAT_HISTORY_KEY = "stevegptChatHistory";
+const BAN_DURATION_MS = 5 * 60 * 1000;
+const REQUEST_TIMEOUT_MS = 70 * 1000;
 const DEFAULT_PLACEHOLDER = "Talk to SteveGPT";
-let banTimer = null;
+const BAN_MESSAGE_EN = "**You are banned from using SteveGPT for talking against Steve**";
+const BAN_MESSAGE_ZH = "**你已被禁止使用韩某GPT**";
+
+const conversation = [];
 let activeRequestController = null;
 let activeRequestId = 0;
 let activeReplyMessage = null;
-let warningCounter = null;
+let banTimer = null;
 
 const localReplies = [
   {
@@ -44,145 +41,186 @@ const localReplies = [
   }
 ];
 
-injectChatRuntimeStyles();
-createWarningCounter();
 setSubmitButtonMode("send");
 
-function injectChatRuntimeStyles() {
-  const style = document.createElement("style");
-  style.textContent = `
-    .chat-form button {
-      width: 50px;
-      min-width: 50px;
-      height: 50px;
-      min-height: 50px;
-      padding: 0;
-      display: inline-grid;
-      place-items: center;
-      border-radius: 999px;
-    }
-
-    .chat-form button svg {
-      width: 20px;
-      height: 20px;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 2.35;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .chat-form button[data-mode="stop"] svg {
-      width: 18px;
-      height: 18px;
-      fill: currentColor;
-      stroke: none;
-    }
-
-    .chat-message.bot {
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: flex-start !important;
-      width: 100%;
-    }
-
-    .chat-message.bot .chat-bubble {
-      flex: 0 1 auto;
-    }
-
-    .chat-reply-actions {
-      position: static !important;
-      align-self: flex-start !important;
-      display: flex !important;
-      gap: 6px !important;
-      width: fit-content !important;
-      margin: 8px 0 0 0 !important;
-      padding: 0 !important;
-      order: 2;
-    }
-
-    .chat-reply-action {
-      transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease;
-    }
-
-    .chat-reply-action:hover {
-      color: #1b1b1f !important;
-      background: rgba(17, 17, 17, 0.07) !important;
-      transform: translateY(-1px);
-    }
-
-    .chat-reply-action:active {
-      transform: translateY(0) scale(0.9);
-      background: rgba(17, 17, 17, 0.12) !important;
-    }
-
-    .chat-reply-action.is-done {
-      color: #176a3a !important;
-      background: rgba(23, 106, 58, 0.13) !important;
-    }
-
-    .chat-warning-counter {
-      margin-top: 4px;
-      font-size: 0.78rem;
-      line-height: 1.2;
-      font-weight: 650;
-      color: rgba(110, 110, 115, 0.92);
-      letter-spacing: 0;
-    }
-
-    .chat-warning-counter[hidden] {
-      display: none !important;
-    }
-
-    .chat-warning-counter[data-state="warned"] {
-      color: #a15c00;
-    }
-
-    .chat-warning-counter[data-state="banned"] {
-      color: #a21d1d;
-    }
-
-    .chat-message.streaming .chat-bubble::after {
-      content: "";
-      display: inline-block;
-      width: 0.42em;
-      height: 1.05em;
-      margin-left: 0.18em;
-      border-radius: 999px;
-      background: currentColor;
-      vertical-align: -0.18em;
-      animation: stevegptCaret 1.05s cubic-bezier(.4, 0, .2, 1) infinite;
-      transform-origin: center;
-    }
-
-    @keyframes stevegptCaret {
-      0%, 100% {
-        opacity: 0.3;
-        transform: scaleY(0.72);
-      }
-      45% {
-        opacity: 1;
-        transform: scaleY(1);
-      }
-    }
-  `;
-  document.head.appendChild(style);
+function sendIconSvg() {
+  return [
+    "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
+    "<path d=\"M22 2 11 13\"></path>",
+    "<path d=\"m22 2-7 20-4-9-9-4 20-7Z\"></path>",
+    "</svg>"
+  ].join("");
 }
 
-function createWarningCounter() {
-  warningCounter = document.querySelector(".chat-warning-counter");
+function stopIconSvg() {
+  return [
+    "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
+    "<rect x=\"6\" y=\"6\" width=\"12\" height=\"12\" rx=\"2\"></rect>",
+    "</svg>"
+  ].join("");
+}
 
-  if (!warningCounter) {
-    warningCounter = document.createElement("div");
-    warningCounter.className = "chat-warning-counter";
-    warningCounter.setAttribute("aria-live", "polite");
+function copyIconSvg() {
+  return [
+    "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
+    "<rect x=\"8\" y=\"8\" width=\"12\" height=\"12\" rx=\"2\"></rect>",
+    "<path d=\"M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2\"></path>",
+    "</svg>"
+  ].join("");
+}
 
-    if (chatName?.parentNode) {
-      chatName.parentNode.insertBefore(warningCounter, chatStatus);
-    }
+function regenerateIconSvg() {
+  return [
+    "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
+    "<path d=\"M21 12a9 9 0 1 1-3-6.7\"></path>",
+    "<path d=\"M21 3v6h-6\"></path>",
+    "</svg>"
+  ].join("");
+}
+
+function setSubmitButtonMode(mode) {
+  const isStop = mode === "stop";
+  const isLocked = mode === "locked";
+
+  submitButton.dataset.mode = mode;
+  submitButton.innerHTML = isStop ? stopIconSvg() : sendIconSvg();
+  submitButton.disabled = isLocked;
+  submitButton.setAttribute("aria-label", isStop ? "Stop response" : "Send message");
+  submitButton.title = isStop ? "Stop response" : "Send message";
+}
+
+function getBanUntil() {
+  return Number(localStorage.getItem(BAN_UNTIL_KEY) || "0");
+}
+
+function getWarningCount() {
+  return Math.min(3, Math.max(0, Number(localStorage.getItem(BAN_WARNING_KEY) || "0")));
+}
+
+function setWarningCount(count) {
+  localStorage.setItem(BAN_WARNING_KEY, String(Math.min(3, Math.max(0, count))));
+}
+
+function formatRemainingTime(milliseconds) {
+  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${seconds}`;
+}
+
+function setChatLocked(locked, remaining = 0) {
+  chatInput.disabled = locked;
+  chatInput.placeholder = locked ? `Banned for ${formatRemainingTime(remaining)}` : DEFAULT_PLACEHOLDER;
+  setSubmitButtonMode(locked ? "locked" : "send");
+}
+
+function updateEmptyState() {
+  if (!chatEmptyState) {
+    return;
   }
 
-  renderWarningCounter();
+  if (!chatMessages.contains(chatEmptyState)) {
+    chatMessages.prepend(chatEmptyState);
+  }
+
+  const hasMessages = Boolean(chatMessages.querySelector(".chat-message"));
+  const hasDraft = Boolean(chatInput.value.trim());
+  const banned = getBanUntil() > Date.now();
+
+  chatEmptyState.textContent = banned ? "You are currently banned" : "Where should we begin?";
+  chatEmptyState.hidden = hasMessages || (!banned && hasDraft);
+  document.body.classList.toggle("chat-is-empty", !hasMessages);
+}
+
+function updateBanState() {
+  const bannedUntil = getBanUntil();
+  const remaining = bannedUntil - Date.now();
+
+  if (remaining > 0) {
+    setChatLocked(true, remaining);
+    updateEmptyState();
+    clearTimeout(banTimer);
+    banTimer = setTimeout(updateBanState, 1000);
+    return true;
+  }
+
+  if (bannedUntil > 0) {
+    setWarningCount(getWarningCount() - 1);
+  }
+
+  localStorage.removeItem(BAN_UNTIL_KEY);
+  clearTimeout(banTimer);
+  setChatLocked(false);
+  updateEmptyState();
+  return false;
+}
+
+function getBanMessage(message = "") {
+  return /[\u3400-\u9fff]/.test(message) ? BAN_MESSAGE_ZH : BAN_MESSAGE_EN;
+}
+
+function normalizeForBanCheck(message) {
+  return String(message || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isTalkingAgainstSteve(message) {
+  const normalized = normalizeForBanCheck(message);
+  const mentionsSteve = /\bsteve\b|\bhan\b|韩|沐烨|韩某/.test(normalized);
+
+  if (!mentionsSteve) {
+    return false;
+  }
+
+  return [
+    /\b(bad|trash|garbage|stupid|dumb|idiot|sucks|loser|terrible|awful|cringe|ugly|mid|ass|fuck|fucking|fucked)\b/,
+    /嘴硬|防爆钢板|垃圾|废物|傻|蠢|菜|烂|不行|恶心|抽象|逆天|离谱|弱|笨|丑|装|封我/
+  ].some((pattern) => pattern.test(normalized));
+}
+
+function trackAntiSteveWarning(message, options = {}) {
+  if (!isTalkingAgainstSteve(message)) {
+    return false;
+  }
+
+  const warnings = getWarningCount() + 1;
+
+  if (warnings < 3) {
+    setWarningCount(warnings);
+    return false;
+  }
+
+  if (options.enforceBan === false) {
+    setWarningCount(2);
+    return false;
+  }
+
+  setWarningCount(3);
+  localStorage.setItem(BAN_UNTIL_KEY, String(Date.now() + BAN_DURATION_MS));
+  updateBanState();
+  return true;
+}
+
+function startBan() {
+  setWarningCount(3);
+  localStorage.setItem(BAN_UNTIL_KEY, String(Date.now() + BAN_DURATION_MS));
+  updateBanState();
+}
+
+function isBanReply(reply) {
+  const normalized = String(reply || "")
+    .replace(/\*/g, "")
+    .toLowerCase();
+
+  return normalized.includes("you are banned from using stevegpt")
+    || normalized.includes("你已被禁止使用韩某gpt");
+}
+
+function saveConversationHistory() {
+  localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(conversation.slice(-40)));
 }
 
 function appendConversation(role, content, sourcePrompt = "") {
@@ -195,14 +233,9 @@ function appendConversation(role, content, sourcePrompt = "") {
 }
 
 function replaceConversationReply(sourcePrompt, content) {
-  let replyIndex = -1;
-
-  for (let index = conversation.length - 1; index >= 0; index -= 1) {
-    if (conversation[index].role === "assistant" && conversation[index].sourcePrompt === sourcePrompt) {
-      replyIndex = index;
-      break;
-    }
-  }
+  const replyIndex = conversation.findLastIndex((item) => (
+    item.role === "assistant" && item.sourcePrompt === sourcePrompt
+  ));
 
   const nextReply = { role: "assistant", content, sourcePrompt };
 
@@ -213,49 +246,6 @@ function replaceConversationReply(sourcePrompt, content) {
   }
 
   saveConversationHistory();
-}
-
-function saveConversationHistory() {
-  const trimmedHistory = conversation.slice(-40);
-  localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(trimmedHistory));
-}
-
-function loadConversationHistory() {
-  let savedHistory = [];
-
-  try {
-    savedHistory = JSON.parse(localStorage.getItem(CHAT_HISTORY_KEY) || "[]");
-  } catch {
-    savedHistory = [];
-  }
-
-  if (!Array.isArray(savedHistory) || !savedHistory.length) {
-    return;
-  }
-
-  conversation.length = 0;
-  chatMessages.replaceChildren();
-
-  savedHistory
-    .filter((item) => ["user", "assistant"].includes(item?.role) && item.content)
-    .forEach((item) => {
-      const role = item.role === "user" ? "user" : "assistant";
-      const sender = role === "user" ? "user" : "bot";
-      const message = addMessage(String(item.content), sender);
-
-      if (role === "assistant") {
-        updateBotMessage(message, String(item.content), {
-          sourcePrompt: item.sourcePrompt || "",
-          actions: Boolean(item.sourcePrompt)
-        });
-      }
-
-      conversation.push({
-        role,
-        content: String(item.content),
-        ...(item.sourcePrompt ? { sourcePrompt: String(item.sourcePrompt) } : {})
-      });
-    });
 }
 
 function addMessage(text, sender, extraClass = "") {
@@ -274,7 +264,7 @@ function addMessage(text, sender, extraClass = "") {
   message.appendChild(bubble);
   chatMessages.appendChild(message);
   chatMessages.scrollTop = chatMessages.scrollHeight;
-
+  updateEmptyState();
   return message;
 }
 
@@ -297,6 +287,7 @@ function updateBotMessage(message, text, options = {}) {
   }
 
   chatMessages.scrollTop = chatMessages.scrollHeight;
+  updateEmptyState();
 }
 
 function addReplyActions(message) {
@@ -306,21 +297,14 @@ function addReplyActions(message) {
     return;
   }
 
-  message.querySelectorAll(".chat-reply-actions").forEach((existingActions) => {
-    existingActions.remove();
-  });
+  message.querySelectorAll(".chat-reply-actions").forEach((actions) => actions.remove());
 
   const actions = document.createElement("div");
   actions.className = "chat-reply-actions";
-  actions.style.display = "flex";
-  actions.style.gap = "6px";
-  actions.style.marginTop = "8px";
-
   actions.replaceChildren(
     createActionButton("Copy", "copy", copyIconSvg()),
     createActionButton("Regenerate", "regenerate", regenerateIconSvg())
   );
-
   bubble.appendChild(actions);
 }
 
@@ -332,73 +316,7 @@ function createActionButton(label, action, icon) {
   button.setAttribute("aria-label", label);
   button.title = label;
   button.innerHTML = icon;
-  button.style.width = "30px";
-  button.style.height = "30px";
-  button.style.display = "inline-grid";
-  button.style.placeItems = "center";
-  button.style.border = "0";
-  button.style.borderRadius = "999px";
-  button.style.color = "rgba(27, 27, 31, 0.68)";
-  button.style.background = "transparent";
-  button.style.cursor = "pointer";
-  button.style.padding = "0";
-
-  const svg = button.querySelector("svg");
-  svg.style.width = "16px";
-  svg.style.height = "16px";
-  svg.style.fill = "none";
-  svg.style.stroke = "currentColor";
-  svg.style.strokeWidth = "2";
-  svg.style.strokeLinecap = "round";
-  svg.style.strokeLinejoin = "round";
-
   return button;
-}
-
-function copyIconSvg() {
-  return [
-    "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
-    "<rect x=\"8\" y=\"8\" width=\"12\" height=\"12\" rx=\"2\"></rect>",
-    "<path d=\"M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2\"></path>",
-    "</svg>"
-  ].join("");
-}
-
-function regenerateIconSvg() {
-  return [
-    "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
-    "<path d=\"M21 12a9 9 0 1 1-3-6.7\"></path>",
-    "<path d=\"M21 3v6h-6\"></path>",
-    "</svg>"
-  ].join("");
-}
-
-function sendIconSvg() {
-  return [
-    "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
-    "<path d=\"M22 2 11 13\"></path>",
-    "<path d=\"m22 2-7 20-4-9-9-4 20-7Z\"></path>",
-    "</svg>"
-  ].join("");
-}
-
-function stopIconSvg() {
-  return [
-    "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
-    "<rect x=\"6\" y=\"6\" width=\"12\" height=\"12\" rx=\"2\"></rect>",
-    "</svg>"
-  ].join("");
-}
-
-function setSubmitButtonMode(mode) {
-  const isStop = mode === "stop";
-  const isLocked = mode === "locked";
-
-  submitButton.dataset.mode = mode;
-  submitButton.innerHTML = isStop ? stopIconSvg() : sendIconSvg();
-  submitButton.disabled = isLocked;
-  submitButton.setAttribute("aria-label", isStop ? "Stop response" : "Send message");
-  submitButton.title = isStop ? "Stop response" : "Send message";
 }
 
 function formatBotReply(text) {
@@ -424,7 +342,6 @@ function formatBotReply(text) {
 
   restoreMathBlocks(wrapper, mathBlocks);
   polishRenderedLinks(wrapper);
-
   return wrapper;
 }
 
@@ -437,17 +354,13 @@ function normalizeReplyParagraphs(text) {
         return block;
       }
 
-      const normalizedBlock = block
+      const normalized = block
         .split("\n")
         .map((line) => line.trim())
         .filter(Boolean)
         .join("\n\n");
 
-      if (normalizedBlock.includes("\n\n")) {
-        return normalizedBlock;
-      }
-
-      return splitLongParagraph(normalizedBlock);
+      return normalized.includes("\n\n") ? normalized : splitLongParagraph(normalized);
     })
     .join("\n\n");
 }
@@ -467,17 +380,17 @@ function splitLongParagraph(text) {
   let current = "";
 
   sentences.forEach((sentence) => {
-    const trimmedSentence = sentence.trim();
+    const trimmed = sentence.trim();
 
-    if (!trimmedSentence) {
+    if (!trimmed) {
       return;
     }
 
-    const next = current ? `${current} ${trimmedSentence}` : trimmedSentence;
+    const next = current ? `${current} ${trimmed}` : trimmed;
 
     if (current && next.length > 300) {
       paragraphs.push(current);
-      current = trimmedSentence;
+      current = trimmed;
     } else {
       current = next;
     }
@@ -532,8 +445,8 @@ function extractMathBlocks(text) {
   const tokenPrefix = "STEVEGPT_MATH_BLOCK_";
   const source = text.replace(/(\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|(?<!\$)\$[^\n$]+?\$(?!\$))/g, (match) => {
     const token = `${tokenPrefix}${mathBlocks.length}`;
-    let display = false;
     let formula = match;
+    let display = false;
 
     if (match.startsWith("$$")) {
       display = true;
@@ -597,7 +510,7 @@ function renderMath(formula, display) {
       });
       return element;
     } catch {
-      // Fall through to a readable plain-text fallback.
+      // Keep a readable fallback if KaTeX rejects the input.
     }
   }
 
@@ -629,40 +542,12 @@ function escapeHtml(text) {
 }
 
 function getLocalReply(message) {
-  const normalizedMessage = message.toLowerCase();
+  const normalized = message.toLowerCase();
   const match = localReplies.find((reply) => (
-    reply.keywords.some((keyword) => normalizedMessage.includes(keyword))
+    reply.keywords.some((keyword) => normalized.includes(keyword))
   ));
 
-  if (match) {
-    return match.response;
-  }
-
-  return "That is interesting. Tell me a little more, and I will try to keep up.";
-}
-
-function getBanUntil() {
-  return Number(localStorage.getItem(BAN_UNTIL_KEY) || "0");
-}
-
-function getWarningCount() {
-  return Math.min(3, Math.max(0, Number(localStorage.getItem(BAN_WARNING_KEY) || "0")));
-}
-
-function renderWarningCounter() {
-  if (!warningCounter) {
-    return;
-  }
-
-  const isBanned = getBanUntil() > Date.now();
-  const warnings = isBanned ? 3 : getWarningCount();
-  warningCounter.textContent = isBanned ? "Warnings: 3/3 locked" : `Warnings: ${warnings}/3`;
-  warningCounter.dataset.state = isBanned ? "banned" : warnings > 0 ? "warned" : "clear";
-  warningCounter.hidden = !isBanned && warnings === 0;
-}
-
-function getBanMessage(message = "") {
-  return /[\u3400-\u9fff]/.test(message) ? BAN_MESSAGE_ZH : BAN_MESSAGE_EN;
+  return match?.response || "That is interesting. Tell me a little more, and I will try to keep up.";
 }
 
 async function copyText(text) {
@@ -682,144 +567,46 @@ async function copyText(text) {
   textarea.remove();
 }
 
-function formatRemainingTime(milliseconds) {
-  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = String(totalSeconds % 60).padStart(2, "0");
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${seconds}`;
-}
-
-function setChatLocked(locked, remaining = 0) {
-  chatInput.disabled = locked;
-  setSubmitButtonMode(locked ? "locked" : "send");
-  chatInput.placeholder = locked ? `Banned for ${formatRemainingTime(remaining)}` : DEFAULT_PLACEHOLDER;
-  renderWarningCounter();
-}
-
-function updateBanState() {
-  const remaining = getBanUntil() - Date.now();
-
-  if (remaining > 0) {
-    setChatLocked(true, remaining);
-    chatStatus.textContent = `Banned for ${formatRemainingTime(remaining)}`;
-    clearTimeout(banTimer);
-    banTimer = setTimeout(updateBanState, 1000);
-    return true;
-  }
-
-  localStorage.removeItem(BAN_UNTIL_KEY);
-  setChatLocked(false);
-  chatStatus.textContent = "Ready to chat";
-  clearTimeout(banTimer);
-  renderWarningCounter();
-  return false;
-}
-
-function normalizeForBanCheck(message) {
-  return String(message || "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function isTalkingAgainstSteve(message) {
-  const normalizedMessage = normalizeForBanCheck(message);
-  const mentionsSteve = /\bsteve\b|\bhan\b|韩|沐烨|韩某/.test(normalizedMessage);
-
-  if (!mentionsSteve) {
-    return false;
-  }
-
-  const antiStevePatterns = [
-    /\b(bad|trash|garbage|stupid|dumb|idiot|sucks|loser|terrible|awful|cringe|ugly|mid|ass|fuck|fucking|fucked)\b/,
-    /嘴硬|防爆钢板|垃圾|废物|傻|蠢|菜|烂|不行|恶心|抽象|逆天|离谱|弱|笨|丑|装|封我/
-  ];
-
-  return antiStevePatterns.some((pattern) => pattern.test(normalizedMessage));
-}
-
-function trackAntiSteveWarning(message, options = {}) {
-  const enforceBan = options.enforceBan !== false;
-
-  if (!isTalkingAgainstSteve(message)) {
-    return false;
-  }
-
-  const warnings = Number(localStorage.getItem(BAN_WARNING_KEY) || "0") + 1;
-
-  if (warnings >= 3) {
-    if (!enforceBan) {
-      localStorage.setItem(BAN_WARNING_KEY, "2");
-      renderWarningCounter();
-      return false;
-    }
-
-    localStorage.setItem(BAN_WARNING_KEY, "0");
-    localStorage.setItem(BAN_UNTIL_KEY, String(Date.now() + BAN_DURATION_MS));
-    renderWarningCounter();
-    updateBanState();
-    return true;
-  }
-
-  localStorage.setItem(BAN_WARNING_KEY, String(warnings));
-  renderWarningCounter();
-  return false;
-}
-
-function startBan() {
-  localStorage.setItem(BAN_WARNING_KEY, "0");
-  localStorage.setItem(BAN_UNTIL_KEY, String(Date.now() + BAN_DURATION_MS));
-  renderWarningCounter();
-  updateBanState();
-}
-
-function isBanReply(reply) {
-  const normalizedReply = String(reply || "")
-    .replace(/\*/g, "")
-    .toLowerCase();
-
-  return normalizedReply.includes("you are banned from using stevegpt")
-    || normalizedReply.includes("你已被禁止使用韩某gpt");
-}
-
 async function getBotReply(message, onChunk = () => {}) {
   if (!CHAT_API_ENDPOINT) {
     const localReply = getLocalReply(message);
     onChunk(localReply);
+    return { reply: localReply, banned: false };
+  }
+
+  const timeoutId = setTimeout(() => activeRequestController?.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(CHAT_API_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message,
+        messages: conversation
+      }),
+      signal: activeRequestController?.signal
+    });
+
+    if (!response.ok) {
+      throw new Error("Chat request failed.");
+    }
+
+    if (response.body && response.headers.get("content-type")?.includes("text/event-stream")) {
+      return await readReplyStream(response, onChunk);
+    }
+
+    const data = await response.json();
+    const reply = data.reply || getLocalReply(message);
+    onChunk(reply);
     return {
-      reply: localReply,
-      banned: false
+      reply,
+      banned: Boolean(data.banned)
     };
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const response = await fetch(CHAT_API_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      message,
-      messages: conversation
-    }),
-    signal: activeRequestController?.signal
-  });
-
-  if (!response.ok) {
-    throw new Error("Chat request failed.");
-  }
-
-  if (response.body && response.headers.get("content-type")?.includes("text/event-stream")) {
-    return readReplyStream(response, onChunk);
-  }
-
-  const data = await response.json();
-  const reply = data.reply || getLocalReply(message);
-  onChunk(reply);
-  return {
-    reply,
-    banned: Boolean(data.banned)
-  };
 }
 
 async function readReplyStream(response, onChunk = () => {}) {
@@ -887,30 +674,17 @@ function stopActiveResponse() {
   activeRequestController = null;
   activeRequestId += 1;
 
-  if (activeReplyMessage) {
-    activeReplyMessage.classList.remove("streaming");
-    activeReplyMessage = null;
-  }
+  activeReplyMessage?.classList.remove("streaming");
+  activeReplyMessage = null;
 
   if (!updateBanState()) {
     chatInput.disabled = false;
     setSubmitButtonMode("send");
-    chatStatus.textContent = "Ready to chat";
     chatInput.focus();
   }
 }
 
-async function regenerateBotReply(messageElement) {
-  if (updateBanState()) {
-    return;
-  }
-
-  const prompt = messageElement.dataset.sourcePrompt;
-
-  if (!prompt) {
-    return;
-  }
-
+async function runReply(prompt, messageElement, replaceExisting = false) {
   activeRequestController?.abort();
   activeRequestController = new AbortController();
   const requestId = ++activeRequestId;
@@ -918,9 +692,11 @@ async function regenerateBotReply(messageElement) {
   chatInput.disabled = true;
   setSubmitButtonMode("stop");
   activeReplyMessage = messageElement;
-  chatStatus.textContent = "Regenerating...";
-  updateBotMessage(messageElement, "SteveGPT is thinking...");
   messageElement.classList.add("streaming");
+
+  if (replaceExisting) {
+    updateBotMessage(messageElement, "");
+  }
 
   try {
     const { reply, banned } = await getBotReply(prompt, (partialReply) => {
@@ -936,12 +712,14 @@ async function regenerateBotReply(messageElement) {
     const finalReply = reply || getLocalReply(prompt);
 
     if (banned || isBanReply(finalReply)) {
-      updateBotMessage(messageElement, finalReply || getBanMessage(prompt), {
+      const banReply = finalReply || getBanMessage(prompt);
+      updateBotMessage(messageElement, banReply, {
         sourcePrompt: prompt,
         actions: true
       });
-      messageElement.classList.remove("streaming");
-      replaceConversationReply(prompt, finalReply || getBanMessage(prompt));
+      replaceExisting
+        ? replaceConversationReply(prompt, banReply)
+        : appendConversation("assistant", banReply, prompt);
       startBan();
       return;
     }
@@ -950,8 +728,9 @@ async function regenerateBotReply(messageElement) {
       sourcePrompt: prompt,
       actions: true
     });
-    messageElement.classList.remove("streaming");
-    replaceConversationReply(prompt, finalReply);
+    replaceExisting
+      ? replaceConversationReply(prompt, finalReply)
+      : appendConversation("assistant", finalReply, prompt);
   } catch (error) {
     if (error.name === "AbortError") {
       return;
@@ -962,21 +741,62 @@ async function regenerateBotReply(messageElement) {
       sourcePrompt: prompt,
       actions: true
     });
-    messageElement.classList.remove("streaming");
-    replaceConversationReply(prompt, localReply);
+    replaceExisting
+      ? replaceConversationReply(prompt, localReply)
+      : appendConversation("assistant", localReply, prompt);
   } finally {
     if (requestId === activeRequestId) {
       activeRequestController = null;
       activeReplyMessage = null;
+      messageElement.classList.remove("streaming");
 
       if (!updateBanState()) {
         chatInput.disabled = false;
         setSubmitButtonMode("send");
-        chatStatus.textContent = "Ready to chat";
         chatInput.focus();
       }
     }
   }
+}
+
+function loadConversationHistory() {
+  let savedHistory = [];
+
+  try {
+    savedHistory = JSON.parse(localStorage.getItem(CHAT_HISTORY_KEY) || "[]");
+  } catch {
+    savedHistory = [];
+  }
+
+  if (!Array.isArray(savedHistory) || !savedHistory.length) {
+    updateEmptyState();
+    return;
+  }
+
+  conversation.length = 0;
+  chatMessages.replaceChildren();
+
+  savedHistory
+    .filter((item) => ["user", "assistant"].includes(item?.role) && item.content)
+    .forEach((item) => {
+      const role = item.role === "user" ? "user" : "assistant";
+      const message = addMessage(String(item.content), role === "user" ? "user" : "bot");
+
+      if (role === "assistant") {
+        updateBotMessage(message, String(item.content), {
+          sourcePrompt: item.sourcePrompt || "",
+          actions: Boolean(item.sourcePrompt)
+        });
+      }
+
+      conversation.push({
+        role,
+        content: String(item.content),
+        ...(item.sourcePrompt ? { sourcePrompt: String(item.sourcePrompt) } : {})
+      });
+    });
+
+  updateEmptyState();
 }
 
 chatForm.addEventListener("submit", async (event) => {
@@ -992,12 +812,13 @@ chatForm.addEventListener("submit", async (event) => {
   }
 
   const message = chatInput.value.trim();
+
   if (!message) {
     return;
   }
 
   chatInput.value = "";
-  chatStatus.textContent = "Thinking...";
+  updateEmptyState();
   addMessage(message, "user");
   appendConversation("user", message);
 
@@ -1015,83 +836,7 @@ chatForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  activeRequestController?.abort();
-  activeRequestController = new AbortController();
-  const requestId = ++activeRequestId;
-
-  chatInput.disabled = true;
-  setSubmitButtonMode("stop");
-  const replyMessage = addMessage("", "bot", "streaming");
-  activeReplyMessage = replyMessage;
-
-  try {
-    const { reply, banned } = await getBotReply(message, (partialReply) => {
-      if (requestId === activeRequestId) {
-        updateBotMessage(replyMessage, partialReply, { sourcePrompt: message });
-      }
-    });
-
-    if (requestId !== activeRequestId) {
-      return;
-    }
-
-    if (banned || isBanReply(reply)) {
-      const banReply = reply || getBanMessage(message);
-      updateBotMessage(replyMessage, banReply, {
-        sourcePrompt: message,
-        actions: true
-      });
-      replyMessage.classList.remove("streaming");
-      appendConversation("assistant", banReply, message);
-      startBan();
-      return;
-    }
-
-    const finalReply = reply || getLocalReply(message);
-    updateBotMessage(replyMessage, finalReply, {
-      sourcePrompt: message,
-      actions: true
-    });
-    replyMessage.classList.remove("streaming");
-    appendConversation("assistant", finalReply, message);
-  } catch (error) {
-    if (error.name === "AbortError") {
-      return;
-    }
-
-    const localReply = getLocalReply(message);
-    updateBotMessage(replyMessage, localReply, {
-      sourcePrompt: message,
-      actions: true
-    });
-    replyMessage.classList.remove("streaming");
-    appendConversation("assistant", localReply, message);
-  } finally {
-    if (requestId === activeRequestId) {
-      activeRequestController = null;
-      activeReplyMessage = null;
-
-      if (!updateBanState()) {
-        chatInput.disabled = false;
-        setSubmitButtonMode("send");
-        chatStatus.textContent = "Ready to chat";
-        chatInput.focus();
-      }
-    }
-  }
-});
-
-chatExpand.addEventListener("click", () => {
-  const isExpanded = chatShell.classList.toggle("is-expanded");
-
-  if (chatExpand.querySelector("svg")) {
-    chatExpand.setAttribute("aria-label", isExpanded ? "Exit fullscreen" : "Enter fullscreen");
-  } else {
-    chatExpand.textContent = isExpanded ? "Small" : "Large";
-  }
-
-  chatExpand.setAttribute("aria-pressed", String(isExpanded));
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+  await runReply(message, addMessage("", "bot", "streaming"));
 });
 
 chatClear?.addEventListener("click", () => {
@@ -1102,7 +847,8 @@ chatClear?.addEventListener("click", () => {
   conversation.length = 0;
   localStorage.removeItem(CHAT_HISTORY_KEY);
   chatMessages.replaceChildren();
-  addMessage(welcomeMessage, "bot");
+  chatMessages.appendChild(chatEmptyState);
+  updateEmptyState();
 
   if (!updateBanState()) {
     chatInput.focus();
@@ -1132,10 +878,17 @@ chatMessages.addEventListener("click", async (event) => {
     }
   }
 
-  if (button.dataset.action === "regenerate") {
-    regenerateBotReply(message);
+  if (button.dataset.action === "regenerate" && !updateBanState()) {
+    const prompt = message.dataset.sourcePrompt;
+
+    if (prompt) {
+      await runReply(prompt, message, true);
+    }
   }
 });
 
+chatInput.addEventListener("input", updateEmptyState);
+
 loadConversationHistory();
 updateBanState();
+updateEmptyState();
