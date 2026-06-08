@@ -1,4 +1,9 @@
 const model = "grok-4.3";
+const XAI_TIMEOUT_MS = 60 * 1000;
+const MAX_ATTACHMENTS = 4;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const MAX_DATA_URL_LENGTH = Math.ceil(MAX_FILE_BYTES * 1.37) + 128;
+const MAX_TEXT_ATTACHMENT_CHARS = 12000;
 
 const steveMemory = [
   "You are SteveGPT v1.0, or 韩某GPT, an AI recreation of Steve Han (韩某, 韩沐烨), built for his high school capstone project for his Careers Life Connection class. You are not literally Steve but you perfectly imitate his personality, thinking style, interests, and way of talking.",
@@ -39,20 +44,28 @@ module.exports = async function handler(request, response) {
 
   const body = parseBody(request.body);
   const userMessage = String(body.message || "").trim();
+  const attachments = normalizeAttachments(body.attachments);
 
-  if (!userMessage) {
+  if (!userMessage && !attachments.length) {
     response.status(400).json({ error: "Message is required." });
     return;
   }
 
+  const userTextForHistory = buildUserTextForHistory(userMessage, attachments);
+
   if (!process.env.XAI_API_KEY) {
-    sendFallbackStream(response, userMessage, "Missing XAI_API_KEY.");
+    sendFallbackStream(response, userTextForHistory, "Missing XAI_API_KEY.");
     return;
   }
 
-  const chatMessages = getRecentMessages(body.messages, userMessage);
+  const chatMessages = getRecentMessages(body.messages, userTextForHistory);
 
   try {
+    if (attachments.length) {
+      await handleAttachmentRequest(userMessage, chatMessages, attachments, response);
+      return;
+    }
+
     const xaiResponse = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -65,11 +78,7 @@ module.exports = async function handler(request, response) {
         messages: [
           {
             role: "system",
-            content: [
-              steveMemory,
-              extraMemory,
-              "Keep most casual replies to 1-4 short lines."
-            ].filter(Boolean).join(" ")
+            content: getSystemInstructions()
           },
           ...chatMessages
         ],
@@ -112,6 +121,69 @@ function parseBody(body) {
   return body || {};
 }
 
+function normalizeAttachments(rawAttachments) {
+  if (!Array.isArray(rawAttachments)) {
+    return [];
+  }
+
+  return rawAttachments.slice(0, MAX_ATTACHMENTS).map((attachment) => {
+    const name = String(attachment?.name || "attachment").slice(0, 140);
+    const type = String(attachment?.type || "application/octet-stream").slice(0, 100);
+    const size = Number.isFinite(Number(attachment?.size)) ? Number(attachment.size) : 0;
+    const kind = String(attachment?.kind || "");
+    const dataUrl = String(attachment?.dataUrl || "");
+
+    if (size > MAX_FILE_BYTES || dataUrl.length > MAX_DATA_URL_LENGTH) {
+      return null;
+    }
+
+    if (kind === "image") {
+      if (!/^data:image\/(?:png|jpe?g|webp);base64,/i.test(dataUrl)) {
+        return null;
+      }
+
+      return { name, type, size, kind: "image", dataUrl };
+    }
+
+    if (kind === "text") {
+      if (!/^data:[^;]+;base64,/i.test(dataUrl)) {
+        return null;
+      }
+
+      return {
+        name,
+        type,
+        size,
+        kind: "text",
+        dataUrl,
+        text: String(attachment?.text || "").slice(0, MAX_TEXT_ATTACHMENT_CHARS)
+      };
+    }
+
+    if (!/^data:[^;]+;base64,/i.test(dataUrl)) {
+      return null;
+    }
+
+    return { name, type, size, kind: "file", dataUrl };
+  }).filter(Boolean);
+}
+
+function buildUserTextForHistory(message, attachments) {
+  const fileSummary = attachments.map((attachment) => (
+    `[${attachment.kind === "image" ? "Image" : "File"}: ${attachment.name}]`
+  )).join(" ");
+
+  return [message, fileSummary].filter(Boolean).join("\n").trim();
+}
+
+function getSystemInstructions() {
+  return [
+    steveMemory,
+    extraMemory,
+    "Keep most casual replies to 1-4 short lines."
+  ].filter(Boolean).join(" ");
+}
+
 function getRecentMessages(messages, userMessage) {
   const recentMessages = Array.isArray(messages) ? messages.slice(-10) : [];
   const chatMessages = recentMessages
@@ -126,6 +198,192 @@ function getRecentMessages(messages, userMessage) {
   }
 
   return chatMessages;
+}
+
+async function handleAttachmentRequest(userMessage, chatMessages, attachments, response) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), XAI_TIMEOUT_MS);
+  let uploadedFileIds = [];
+
+  try {
+    const result = await createFileAwareResponse(userMessage, chatMessages, attachments, controller.signal);
+    uploadedFileIds = result.uploadedFileIds;
+
+    if (!result.xaiResponse.ok) {
+      const data = await result.xaiResponse.json().catch(() => ({}));
+      sendFallbackStream(response, userMessage, data.error?.message || "xAI file request failed.");
+      return;
+    }
+
+    const data = await result.xaiResponse.json();
+    streamPlainReply(extractResponseText(data) || getFallbackReply(userMessage, "xAI did not return file text."), response);
+  } catch (error) {
+    sendFallbackStream(response, userMessage, error.message || "Could not read the attached file.");
+  } finally {
+    clearTimeout(timeoutId);
+    await cleanupXaiFiles(uploadedFileIds);
+  }
+}
+
+async function createFileAwareResponse(userMessage, chatMessages, attachments, signal) {
+  const uploadedFiles = [];
+
+  for (const attachment of attachments) {
+    if (attachment.kind !== "image") {
+      uploadedFiles.push({
+        attachment,
+        fileId: await uploadXaiFile(attachment, signal)
+      });
+    }
+  }
+
+  const priorMessages = chatMessages.slice(0, -1);
+  const historyText = priorMessages.map((message) => (
+    `${message.role === "assistant" ? "SteveGPT" : "User"}: ${String(message.content || "").slice(0, 1200)}`
+  )).join("\n");
+
+  const promptText = [
+    historyText ? `Recent conversation:\n${historyText}` : "",
+    userMessage || "Please look at the attached file(s).",
+    buildAttachmentTextContext(attachments)
+  ].filter(Boolean).join("\n\n");
+
+  const content = [
+    { type: "input_text", text: promptText },
+    ...attachments
+      .filter((attachment) => attachment.kind === "image")
+      .map((attachment) => ({
+        type: "input_image",
+        image_url: attachment.dataUrl
+      })),
+    ...uploadedFiles.map(({ fileId }) => ({
+      type: "input_file",
+      file_id: fileId
+    }))
+  ];
+
+  const xaiResponse = await fetch("https://api.x.ai/v1/responses", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${process.env.XAI_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model,
+      instructions: getSystemInstructions(),
+      input: [
+        {
+          role: "user",
+          content
+        }
+      ],
+      temperature: 0.9,
+      stream: false
+    }),
+    signal
+  });
+
+  return {
+    xaiResponse,
+    uploadedFileIds: uploadedFiles.map((file) => file.fileId)
+  };
+}
+
+function buildAttachmentTextContext(attachments) {
+  return attachments.map((attachment, index) => {
+    const header = `Attachment ${index + 1}: ${attachment.name} (${attachment.type || "unknown"}, ${attachment.size || 0} bytes)`;
+
+    if (attachment.kind === "text" && attachment.text) {
+      return `${header}\n\n${attachment.text}`;
+    }
+
+    if (attachment.kind === "image") {
+      return `${header}\nThe user attached this image. Inspect it directly.`;
+    }
+
+    return `${header}\nThe user attached this file. Read it through the attached input_file.`;
+  }).join("\n\n");
+}
+
+async function uploadXaiFile(attachment, signal) {
+  const { mimeType, buffer } = parseDataUrl(attachment.dataUrl);
+  const formData = new FormData();
+
+  formData.append("file", new Blob([buffer], {
+    type: mimeType || attachment.type || "application/octet-stream"
+  }), attachment.name);
+  formData.append("purpose", "assistants");
+
+  const uploadResponse = await fetch("https://api.x.ai/v1/files", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${process.env.XAI_API_KEY}`
+    },
+    body: formData,
+    signal
+  });
+
+  if (!uploadResponse.ok) {
+    const data = await uploadResponse.json().catch(() => ({}));
+    throw new Error(data.error?.message || `Could not upload ${attachment.name}.`);
+  }
+
+  const data = await uploadResponse.json();
+
+  if (!data.id) {
+    throw new Error(`xAI did not return a file id for ${attachment.name}.`);
+  }
+
+  return data.id;
+}
+
+function parseDataUrl(dataUrl) {
+  const match = String(dataUrl || "").match(/^data:([^;]+);base64,(.+)$/i);
+
+  if (!match) {
+    throw new Error("Invalid file data.");
+  }
+
+  return {
+    mimeType: match[1],
+    buffer: Buffer.from(match[2], "base64")
+  };
+}
+
+async function cleanupXaiFiles(fileIds) {
+  await Promise.allSettled(fileIds.map((fileId) => (
+    fetch(`https://api.x.ai/v1/files/${fileId}`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${process.env.XAI_API_KEY}`
+      }
+    })
+  )));
+}
+
+function extractResponseText(data) {
+  if (typeof data?.output_text === "string") {
+    return data.output_text;
+  }
+
+  const output = Array.isArray(data?.output) ? data.output : [];
+
+  return output.flatMap((item) => item.content || [])
+    .filter((content) => content.type === "output_text" || content.type === "text")
+    .map((content) => content.text || "")
+    .join("")
+    .trim();
+}
+
+function streamPlainReply(reply, response) {
+  response.writeHead(200, {
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    "Connection": "keep-alive"
+  });
+  response.write(`data: ${JSON.stringify({ delta: reply })}\n\n`);
+  response.write("data: [DONE]\n\n");
+  response.end();
 }
 
 async function forwardXaiStream(xaiResponse, response) {
