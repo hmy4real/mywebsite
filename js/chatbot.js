@@ -6,13 +6,19 @@ const chatMessages = document.getElementById("chatMessages");
 const chatClear = document.getElementById("chatClear");
 const chatEmptyState = document.getElementById("chatEmptyState");
 const chatShell = document.querySelector(".chat-shell");
-const submitButton = chatForm.querySelector("button");
+const chatAttach = document.getElementById("chatAttach");
+const chatUpload = document.getElementById("chatUpload");
+const attachmentTray = document.getElementById("attachmentTray");
+const submitButton = document.getElementById("chatSubmit") || chatForm.querySelector("button[type='submit']");
 
 const CHAT_HISTORY_KEY = "stevegptChatHistory";
 const BAN_WARNING_KEY = "stevegptAntiSteveWarnings";
 const BAN_UNTIL_KEY = "stevegptBannedUntil";
 const BAN_DURATION_MS = 5 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 70 * 1000;
+const MAX_ATTACHMENTS = 4;
+const MAX_FILE_BYTES = 16 * 1024 * 1024;
+const MAX_TEXT_ATTACHMENT_CHARS = 12000;
 const DEFAULT_PLACEHOLDER = "Talk to SteveGPT";
 const BAN_MESSAGE_EN = "**You are banned from using SteveGPT for talking against Steve**";
 const BAN_MESSAGE_ZH = "**你已被禁止使用韩某GPT**";
@@ -22,6 +28,7 @@ let activeRequestController = null;
 let activeRequestId = 0;
 let activeReplyMessage = null;
 let banTimer = null;
+let pendingAttachments = [];
 
 const localReplies = [
   {
@@ -122,6 +129,15 @@ function checkIconSvg() {
   ].join("");
 }
 
+function closeIconSvg() {
+  return [
+    "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
+    "<path d=\"M18 6 6 18\"></path>",
+    "<path d=\"m6 6 12 12\"></path>",
+    "</svg>"
+  ].join("");
+}
+
 function regenerateIconSvg() {
   return [
     "<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\">",
@@ -163,6 +179,9 @@ function formatRemainingTime(milliseconds) {
 
 function setChatLocked(locked, remaining = 0) {
   chatInput.disabled = locked;
+  if (chatAttach) {
+    chatAttach.disabled = locked;
+  }
   chatInput.placeholder = locked ? `Banned for ${formatRemainingTime(remaining)}` : DEFAULT_PLACEHOLDER;
   setSubmitButtonMode(locked ? "locked" : "send");
 }
@@ -348,7 +367,193 @@ function pruneChatAfterMessage(messageElement) {
   updateEmptyState();
 }
 
-function addMessage(text, sender, extraClass = "") {
+function isTextAttachment(file) {
+  return /^text\//.test(file.type)
+    || /\.(txt|md|csv|json|js|html|css|py|java)$/i.test(file.name);
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error || new Error("Could not read file."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error || new Error("Could not read file."));
+    reader.readAsText(file);
+  });
+}
+
+async function createAttachment(file) {
+  const base = {
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    name: file.name || "attachment",
+    type: file.type || "application/octet-stream",
+    size: file.size || 0
+  };
+
+  if (file.size > MAX_FILE_BYTES) {
+    throw new Error(`${base.name} is too large. Files need to be under ${formatFileSize(MAX_FILE_BYTES)}.`);
+  }
+
+  if (file.type.startsWith("image/")) {
+    return {
+      ...base,
+      kind: "image",
+      dataUrl: await readFileAsDataUrl(file)
+    };
+  }
+
+  if (isTextAttachment(file)) {
+    return {
+      ...base,
+      kind: "text",
+      dataUrl: await readFileAsDataUrl(file),
+      text: (await readFileAsText(file)).slice(0, MAX_TEXT_ATTACHMENT_CHARS)
+    };
+  }
+
+  return {
+    ...base,
+    kind: "file",
+    dataUrl: await readFileAsDataUrl(file)
+  };
+}
+
+function renderAttachmentPreview(attachment, removable = false) {
+  const chip = document.createElement("div");
+  chip.className = removable ? "attachment-chip" : "message-attachment-chip";
+
+  if (attachment.kind === "image" && attachment.dataUrl) {
+    const image = document.createElement("img");
+    image.src = attachment.dataUrl;
+    image.alt = "";
+
+    if (!removable) {
+      chip.className = "message-image-attachment";
+      chip.appendChild(image);
+      return chip;
+    }
+
+    chip.classList.add("is-image");
+    chip.appendChild(image);
+  } else {
+    const label = document.createElement("span");
+    label.textContent = `${attachment.name} ${attachment.size ? `(${formatFileSize(attachment.size)})` : ""}`.trim();
+    chip.appendChild(label);
+  }
+
+  if (removable) {
+    const remove = document.createElement("button");
+    remove.className = "attachment-remove";
+    remove.type = "button";
+    remove.dataset.attachmentId = attachment.id;
+    remove.setAttribute("aria-label", `Remove ${attachment.name}`);
+    remove.title = "Remove";
+    remove.innerHTML = closeIconSvg();
+    chip.appendChild(remove);
+  }
+
+  return chip;
+}
+
+function renderAttachmentTray() {
+  if (!attachmentTray) {
+    return;
+  }
+
+  attachmentTray.replaceChildren(...pendingAttachments.map((attachment) => (
+    renderAttachmentPreview(attachment, true)
+  )));
+  attachmentTray.hidden = pendingAttachments.length === 0;
+}
+
+async function handleSelectedFiles(files) {
+  const slots = MAX_ATTACHMENTS - pendingAttachments.length;
+
+  if (slots <= 0) {
+    return;
+  }
+
+  const selectedFiles = [...files].slice(0, slots);
+
+  for (const file of selectedFiles) {
+    try {
+      pendingAttachments.push(await createAttachment(file));
+    } catch (error) {
+      addMessage(error.message || "couldnt attach that file", "bot");
+    }
+  }
+
+  renderAttachmentTray();
+}
+
+async function handlePastedFiles(event) {
+  const clipboard = event.clipboardData;
+
+  if (!clipboard) {
+    return;
+  }
+
+  const files = [
+    ...[...clipboard.files],
+    ...[...clipboard.items]
+      .filter((item) => item.kind === "file")
+      .map((item) => item.getAsFile())
+      .filter(Boolean)
+  ];
+  const uniqueFiles = files.filter((file, index, list) => (
+    list.findIndex((candidate) => (
+      candidate.name === file.name
+      && candidate.size === file.size
+      && candidate.type === file.type
+    )) === index
+  ));
+
+  if (!uniqueFiles.length) {
+    return;
+  }
+
+  event.preventDefault();
+  await handleSelectedFiles(uniqueFiles);
+}
+
+function getAttachmentSummary(attachments) {
+  return attachments
+    .map((attachment) => `[${attachment.kind === "image" ? "Image" : "File"}: ${attachment.name}]`)
+    .join(" ");
+}
+
+function serializeAttachments(attachments) {
+  return attachments.map((attachment) => ({
+    name: attachment.name,
+    type: attachment.type,
+    size: attachment.size,
+    kind: attachment.kind,
+    ...(attachment.dataUrl ? { dataUrl: attachment.dataUrl } : {}),
+    ...(attachment.text ? { text: attachment.text.slice(0, MAX_TEXT_ATTACHMENT_CHARS) } : {})
+  }));
+}
+
+function addMessage(text, sender, extraClass = "", attachments = []) {
   const message = document.createElement("div");
   message.className = `chat-message ${sender} ${extraClass}`.trim();
 
@@ -362,6 +567,14 @@ function addMessage(text, sender, extraClass = "") {
   }
 
   message.appendChild(bubble);
+
+  if (sender === "user" && attachments.length) {
+    const attachmentList = document.createElement("div");
+    attachmentList.className = "message-attachments";
+    attachmentList.replaceChildren(...attachments.map((attachment) => renderAttachmentPreview(attachment)));
+    bubble.appendChild(attachmentList);
+  }
+
   chatMessages.appendChild(message);
   scrollChatToBottom();
   updateEmptyState();
@@ -762,7 +975,7 @@ async function copyText(text) {
   textarea.remove();
 }
 
-async function getBotReply(message, onChunk = () => {}) {
+async function getBotReply(message, onChunk = () => {}, attachments = []) {
   if (!CHAT_API_ENDPOINT) {
     const localReply = getLocalReply(message);
     onChunk(localReply);
@@ -779,7 +992,8 @@ async function getBotReply(message, onChunk = () => {}) {
       },
       body: JSON.stringify({
         message,
-        messages: conversation
+        messages: conversation,
+        attachments: serializeAttachments(attachments)
       }),
       signal: activeRequestController?.signal
     });
@@ -881,17 +1095,23 @@ function stopActiveResponse() {
 
   if (!updateBanState()) {
     chatInput.disabled = false;
+    if (chatAttach) {
+      chatAttach.disabled = false;
+    }
     setSubmitButtonMode("send");
     chatInput.focus();
   }
 }
 
-async function runReply(prompt, messageElement, replaceExisting = false) {
+async function runReply(prompt, messageElement, replaceExisting = false, attachments = []) {
   activeRequestController?.abort();
   activeRequestController = new AbortController();
   const requestId = ++activeRequestId;
 
   chatInput.disabled = true;
+  if (chatAttach) {
+    chatAttach.disabled = true;
+  }
   setSubmitButtonMode("stop");
   activeReplyMessage = messageElement;
   messageElement.classList.add("streaming");
@@ -905,7 +1125,7 @@ async function runReply(prompt, messageElement, replaceExisting = false) {
       if (requestId === activeRequestId) {
         updateBotMessage(messageElement, partialReply, { sourcePrompt: prompt });
       }
-    });
+    }, attachments);
 
     if (requestId !== activeRequestId) {
       return;
@@ -961,6 +1181,9 @@ async function runReply(prompt, messageElement, replaceExisting = false) {
 
       if (!updateBanState()) {
         chatInput.disabled = false;
+        if (chatAttach) {
+          chatAttach.disabled = false;
+        }
         setSubmitButtonMode("send");
         chatInput.focus();
       }
@@ -1008,6 +1231,32 @@ function loadConversationHistory() {
   updateEmptyState();
 }
 
+chatAttach?.addEventListener("click", () => {
+  if (!updateBanState()) {
+    chatUpload?.click();
+  }
+});
+
+chatUpload?.addEventListener("change", async () => {
+  await handleSelectedFiles(chatUpload.files || []);
+  chatUpload.value = "";
+});
+
+chatInput.addEventListener("paste", handlePastedFiles);
+
+attachmentTray?.addEventListener("click", (event) => {
+  const removeButton = event.target.closest(".attachment-remove");
+
+  if (!removeButton) {
+    return;
+  }
+
+  pendingAttachments = pendingAttachments.filter((attachment) => (
+    attachment.id !== removeButton.dataset.attachmentId
+  ));
+  renderAttachmentTray();
+});
+
 chatForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -1021,31 +1270,40 @@ chatForm.addEventListener("submit", async (event) => {
   }
 
   const message = chatInput.value.trim();
+  const attachments = pendingAttachments.slice();
 
-  if (!message) {
+  if (!message && !attachments.length) {
     return;
   }
 
-  chatInput.value = "";
-  updateEmptyState();
-  addMessage(message, "user");
-  appendConversation("user", message);
+  const attachmentSummary = getAttachmentSummary(attachments);
+  const imageOnlyMessage = !message && attachments.length && attachments.every((attachment) => attachment.kind === "image");
+  const displayMessage = message || (imageOnlyMessage ? "" : `${attachments.length} attachment${attachments.length === 1 ? "" : "s"}`);
+  const historyMessage = [message, attachmentSummary].filter(Boolean).join("\n");
+  const prompt = message || `Please look at the attached file(s): ${attachmentSummary}`;
 
-  const clientTriggeredBan = trackAntiSteveWarning(message, { enforceBan: !CHAT_API_ENDPOINT });
+  chatInput.value = "";
+  pendingAttachments = [];
+  renderAttachmentTray();
+  updateEmptyState();
+  addMessage(displayMessage, "user", "", attachments);
+  appendConversation("user", historyMessage);
+
+  const clientTriggeredBan = trackAntiSteveWarning(historyMessage, { enforceBan: !CHAT_API_ENDPOINT });
 
   if (!CHAT_API_ENDPOINT && clientTriggeredBan) {
-    const banReply = getBanMessage(message);
+    const banReply = getBanMessage(historyMessage);
     const replyMessage = addMessage("", "bot", "streaming");
     updateBotMessage(replyMessage, banReply, {
-      sourcePrompt: message,
+      sourcePrompt: historyMessage,
       actions: true
     });
     replyMessage.classList.remove("streaming");
-    appendConversation("assistant", banReply, message);
+    appendConversation("assistant", banReply, historyMessage);
     return;
   }
 
-  await runReply(message, addMessage("", "bot", "streaming"));
+  await runReply(prompt, addMessage("", "bot", "streaming"), false, attachments);
 });
 
 chatClear?.addEventListener("click", () => {
@@ -1057,6 +1315,8 @@ chatClear?.addEventListener("click", () => {
   localStorage.removeItem(CHAT_HISTORY_KEY);
   chatMessages.replaceChildren();
   chatMessages.appendChild(chatEmptyState);
+  pendingAttachments = [];
+  renderAttachmentTray();
   updateEmptyState();
 
   if (!updateBanState()) {

@@ -421,6 +421,11 @@ body::after {
   box-shadow: 0 14px 34px rgba(17, 17, 17, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
+.chat-message.user .chat-bubble:has(.message-image-attachment) {
+  max-width: min(344px, calc(100vw - 36px));
+  padding: 16px;
+}
+
 .chat-bubble p {
   margin: 0;
 }
@@ -704,9 +709,9 @@ body::after {
   margin: 0 auto;
   padding: 18px 0 30px;
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto;
-  column-gap: 10px;
+  column-gap: 0;
   align-items: start;
   border: 0;
 }
@@ -716,7 +721,7 @@ body::after {
 }
 
 .chat-input-wrap {
-  grid-column: 2;
+  grid-column: 1;
   grid-row: 2;
   position: relative;
   min-width: 0;
@@ -797,7 +802,7 @@ body:not(.chat-is-empty) .chat-form {
   min-height: 56px;
   border: 1px solid rgba(255, 255, 255, 0.92);
   border-radius: 999px;
-  padding: 0 78px 0 22px;
+  padding: 0 78px 0 60px;
   color: #1b1b1f;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.96), 0 10px 22px rgba(105, 132, 186, 0.06);
@@ -875,13 +880,13 @@ body:not(.chat-is-empty) .chat-form {
 }
 
 .chat-attach {
-  grid-column: 1;
-  grid-row: 2;
-  position: relative;
-  z-index: 2;
-  width: 56px;
-  height: 56px;
-  margin-top: 0;
+  position: absolute;
+  z-index: 3;
+  top: 7px;
+  left: 7px;
+  width: 42px;
+  height: 42px;
+  margin: 0;
   display: inline-grid;
   place-items: center;
   border: 0;
@@ -911,8 +916,8 @@ body:not(.chat-is-empty) .chat-form {
 }
 
 .chat-attach svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2.2;
@@ -921,12 +926,12 @@ body:not(.chat-is-empty) .chat-form {
 }
 
 .attachment-tray {
-  grid-column: 2;
-  grid-row: 1;
+  grid-column: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  margin: 0 0 8px;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
 }
 
 .attachment-tray[hidden] {
@@ -964,6 +969,56 @@ body:not(.chat-is-empty) .chat-form {
   white-space: nowrap;
 }
 
+.attachment-chip.is-image {
+  position: relative;
+  width: 82px;
+  height: 82px;
+  min-height: 82px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 14px 34px rgba(105, 132, 186, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.78);
+}
+
+.attachment-chip.is-image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+.attachment-chip.is-image .attachment-remove {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(17, 17, 17, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.message-image-attachment {
+  width: min(280px, calc(100vw - 68px));
+  aspect-ratio: 1;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.chat-bubble > .message-attachments:first-child .message-image-attachment {
+  margin-top: 0;
+}
+
+.message-image-attachment img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
 .attachment-remove {
   width: 22px;
   height: 22px;
@@ -997,6 +1052,10 @@ body:not(.chat-is-empty) .chat-form {
   gap: 7px;
   margin-top: 8px;
   justify-content: flex-end;
+}
+
+.message-attachments:has(.message-image-attachment) {
+  width: 100%;
 }
 
 .chat-message.user .message-attachment-chip {
@@ -1234,6 +1293,7 @@ body:not(.chat-is-empty) .chat-form {
   .chat-input-wrap input {
     min-height: 52px;
     padding-right: 62px;
+    padding-left: 56px;
   }
 
   .chat-send {
@@ -1246,17 +1306,19 @@ body:not(.chat-is-empty) .chat-form {
   }
 
   .chat-form {
-    grid-template-columns: 52px minmax(0, 1fr);
-    column-gap: 8px;
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
   }
 
   .chat-attach {
-    width: 52px;
-    height: 52px;
-    margin-top: 0;
+    top: 7px;
+    left: 7px;
+    width: 38px;
+    height: 38px;
+    margin: 0;
   }
 
   .attachment-tray {
-    grid-column: 1 / -1;
+    grid-column: 1;
   }
 }

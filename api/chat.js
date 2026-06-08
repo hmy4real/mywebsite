@@ -1,7 +1,7 @@
 const model = "grok-4.3";
 const XAI_TIMEOUT_MS = 60 * 1000;
 const MAX_ATTACHMENTS = 4;
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const MAX_FILE_BYTES = 16 * 1024 * 1024;
 const MAX_DATA_URL_LENGTH = Math.ceil(MAX_FILE_BYTES * 1.37) + 128;
 const MAX_TEXT_ATTACHMENT_CHARS = 12000;
 
