@@ -1,1 +1,863 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Emergency Teyvat Date Simulator</title>
+    <style>
+      :root {
+        --ink: #24182d;
+        --text: #fff8ef;
+        --muted: rgba(255, 248, 239, 0.76);
+        --panel: rgba(35, 20, 41, 0.72);
+        --line: rgba(255, 255, 255, 0.18);
+        --gold: #ffd36e;
+        --pink: #ff8eb7;
+        --green: #9af0bc;
+        --violet: #bca1ff;
+        --red: #ff8a64;
+      }
 
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at 14% 14%, rgba(255, 211, 110, 0.28), transparent 24rem),
+          radial-gradient(circle at 86% 18%, rgba(188, 161, 255, 0.3), transparent 25rem),
+          linear-gradient(135deg, #1d1228, #31204a 48%, #3d1e36);
+        color: var(--text);
+        font-family:
+          Trebuchet MS,
+          Arial,
+          sans-serif;
+      }
+
+      button {
+        font: inherit;
+      }
+
+      .app {
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+
+      .topbar {
+        position: relative;
+        z-index: 4;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        width: min(1180px, calc(100% - 1.4rem));
+        margin: 0 auto;
+        padding: 0.8rem 0;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        min-width: 0;
+      }
+
+      .spark {
+        display: grid;
+        place-items: center;
+        width: 2.55rem;
+        height: 2.55rem;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(255, 211, 110, 0.9), rgba(255, 142, 183, 0.82));
+        color: #2a1732;
+        font-size: 1.35rem;
+        font-weight: 900;
+        box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.18);
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: clamp(1.1rem, 3vw, 1.65rem);
+        line-height: 1;
+        letter-spacing: 0;
+      }
+
+      .brand p {
+        margin: 0.2rem 0 0;
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .tiny-button {
+        min-height: 2.4rem;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        cursor: pointer;
+        font-weight: 800;
+        padding: 0 0.85rem;
+      }
+
+      .screen {
+        position: relative;
+        width: min(1180px, calc(100% - 1.4rem));
+        min-height: calc(100vh - 4.4rem);
+        margin: 0 auto;
+        display: grid;
+        align-items: end;
+      }
+
+      .scene {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px 8px 0 0;
+        background:
+          linear-gradient(to top, rgba(18, 10, 24, 0.86), rgba(18, 10, 24, 0.15) 58%),
+          var(--scene-bg, linear-gradient(135deg, #51336d, #1f2239));
+        box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.32);
+      }
+
+      .scene::before {
+        position: absolute;
+        inset: 0;
+        content: "";
+        background:
+          linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+          linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        background-size: 4.5rem 4.5rem;
+        mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.45), transparent 70%);
+      }
+
+      .character {
+        position: absolute;
+        right: min(5vw, 4rem);
+        bottom: 0;
+        width: min(52vw, 31rem);
+        height: min(78vh, 44rem);
+        object-fit: contain;
+        object-position: bottom center;
+        filter: drop-shadow(0 1.6rem 2rem rgba(0, 0, 0, 0.42));
+        transition:
+          opacity 220ms ease,
+          transform 280ms cubic-bezier(0.2, 0.9, 0.22, 1);
+      }
+
+      .character.enter {
+        animation: slide-in 360ms cubic-bezier(0.2, 0.9, 0.22, 1);
+      }
+
+      .fallback-name {
+        position: absolute;
+        right: 5%;
+        bottom: 26%;
+        display: none;
+        max-width: 28rem;
+        color: rgba(255, 255, 255, 0.16);
+        font-size: clamp(3rem, 12vw, 8rem);
+        font-weight: 900;
+        line-height: 0.9;
+        text-align: right;
+      }
+
+      .menu {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        gap: 1rem;
+        align-self: center;
+        padding: 2rem 0 3rem;
+      }
+
+      .hero-copy {
+        width: min(43rem, 100%);
+        padding: 1.25rem;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(31, 17, 39, 0.58);
+        backdrop-filter: blur(16px);
+      }
+
+      .hero-copy h2 {
+        margin: 0;
+        font-size: clamp(2.1rem, 8vw, 5rem);
+        line-height: 0.92;
+        letter-spacing: 0;
+      }
+
+      .hero-copy p {
+        max-width: 36rem;
+        margin: 0.8rem 0 0;
+        color: var(--muted);
+        font-size: clamp(1rem, 2.4vw, 1.2rem);
+        line-height: 1.45;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+      }
+
+      .card {
+        min-height: 10rem;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        cursor: pointer;
+        text-align: left;
+        padding: 0;
+        box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.16);
+      }
+
+      .card img {
+        display: block;
+        width: 100%;
+        height: 8rem;
+        object-fit: cover;
+        object-position: top center;
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      .card strong,
+      .card span {
+        display: block;
+        padding: 0 0.8rem;
+      }
+
+      .card strong {
+        margin-top: 0.65rem;
+        font-size: 1rem;
+      }
+
+      .card span {
+        margin: 0.2rem 0 0.75rem;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .dialogue {
+        position: relative;
+        z-index: 3;
+        display: none;
+        grid-template-columns: 12rem 1fr;
+        gap: 0.75rem;
+        width: 100%;
+        padding: 0 0 1rem;
+      }
+
+      .nameplate,
+      .box {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        backdrop-filter: blur(18px);
+        box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.2);
+      }
+
+      .nameplate {
+        align-self: start;
+        padding: 0.9rem;
+      }
+
+      .nameplate span {
+        display: block;
+        color: var(--gold);
+        font-size: 0.78rem;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .nameplate strong {
+        display: block;
+        margin-top: 0.2rem;
+        font-size: 1.35rem;
+        line-height: 1;
+      }
+
+      .affection {
+        margin-top: 0.75rem;
+        height: 0.55rem;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      .affection i {
+        display: block;
+        width: var(--love, 20%);
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--pink), var(--gold));
+        transition: width 220ms ease;
+      }
+
+      .box {
+        padding: clamp(0.95rem, 3vw, 1.25rem);
+      }
+
+      .line {
+        min-height: 5.4rem;
+        margin: 0;
+        font-size: clamp(1.05rem, 2.5vw, 1.35rem);
+        line-height: 1.45;
+      }
+
+      .choices {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.55rem;
+        margin-top: 1rem;
+      }
+
+      .choice {
+        min-height: 3rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        cursor: pointer;
+        padding: 0.7rem 0.8rem;
+        font-weight: 800;
+        text-align: left;
+      }
+
+      .choice:hover,
+      .card:hover,
+      .tiny-button:hover {
+        border-color: rgba(255, 255, 255, 0.42);
+        background: rgba(255, 255, 255, 0.16);
+      }
+
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 1rem;
+        z-index: 10;
+        transform: translateX(-50%) translateY(2rem);
+        opacity: 0;
+        pointer-events: none;
+        max-width: calc(100% - 2rem);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(36, 24, 45, 0.9);
+        color: var(--text);
+        padding: 0.6rem 0.9rem;
+        font-size: 0.88rem;
+        font-weight: 800;
+        transition:
+          opacity 170ms ease,
+          transform 170ms ease;
+      }
+
+      .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      @keyframes slide-in {
+        from {
+          opacity: 0;
+          transform: translateX(2rem);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      @media (max-width: 800px) {
+        .topbar {
+          align-items: flex-start;
+        }
+
+        .screen {
+          min-height: calc(100vh - 4rem);
+          width: min(100% - 0.8rem, 1180px);
+        }
+
+        .scene {
+          border-radius: 8px 8px 0 0;
+        }
+
+        .character {
+          right: -1.5rem;
+          width: min(86vw, 29rem);
+          height: 64vh;
+          opacity: 0.92;
+        }
+
+        .menu {
+          align-self: start;
+          padding-top: 1rem;
+        }
+
+        .hero-copy {
+          padding: 1rem;
+        }
+
+        .cards {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .card img {
+          height: 7.2rem;
+        }
+
+        .dialogue {
+          grid-template-columns: 1fr;
+        }
+
+        .nameplate {
+          display: grid;
+          grid-template-columns: auto 1fr;
+          gap: 0.75rem;
+          align-items: center;
+        }
+
+        .affection {
+          margin-top: 0;
+        }
+
+        .choices {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 430px) {
+        .brand p {
+          display: none;
+        }
+
+        .tiny-button {
+          padding-inline: 0.7rem;
+        }
+
+        .cards {
+          gap: 0.55rem;
+        }
+
+        .card {
+          min-height: 8.9rem;
+        }
+
+        .card img {
+          height: 6rem;
+        }
+
+        .card strong,
+        .card span {
+          padding-inline: 0.6rem;
+        }
+
+        .line {
+          min-height: 6.8rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div class="brand">
+          <div class="spark">!</div>
+          <div>
+            <h1>Emergency Teyvat Date Simulator</h1>
+            <p>One suspiciously single-file visual novel.</p>
+          </div>
+        </div>
+        <button class="tiny-button" id="home" type="button">Menu</button>
+      </header>
+
+      <section class="screen" id="screen">
+        <div class="scene" id="scene">
+          <img class="character" id="portrait" alt="" />
+          <div class="fallback-name" id="fallbackName"></div>
+        </div>
+
+        <section class="menu" id="menu">
+          <div class="hero-copy">
+            <h2>The Akasha accidentally invented dating apps.</h2>
+            <p>
+              Paimon clicked every button, the sky made a notification sound, and now you have one afternoon to
+              prove romance, friendship, and snacks can save Teyvat from social embarrassment.
+            </p>
+          </div>
+          <div class="cards" id="cards"></div>
+        </section>
+
+        <section class="dialogue" id="dialogue" aria-live="polite">
+          <aside class="nameplate">
+            <div>
+              <span id="routeType">Route</span>
+              <strong id="speaker">Paimon</strong>
+            </div>
+            <div class="affection" aria-label="Bond meter"><i id="bondBar"></i></div>
+          </aside>
+          <div class="box">
+            <p class="line" id="line"></p>
+            <div class="choices" id="choices"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+    <div class="toast" id="toast"></div>
+
+    <script>
+      const assets = {
+        nahida: "https://genshin-impact.fandom.com/wiki/Special:Redirect/file/Character_Nahida_Full_Wish.png",
+        yae: "https://genshin-impact.fandom.com/wiki/Special:Redirect/file/Character_Yae_Miko_Full_Wish.png",
+        raiden: "https://genshin-impact.fandom.com/wiki/Special:Redirect/file/Character_Raiden_Shogun_Full_Wish.png",
+        hutao: "https://genshin-impact.fandom.com/wiki/Special:Redirect/file/Character_Hu_Tao_Full_Wish.png",
+      };
+
+      const routes = {
+        nahida: {
+          name: "Nahida",
+          type: "Friendship Route",
+          color: "linear-gradient(135deg, #244f3a, #426b59 52%, #826f37)",
+          image: assets.nahida,
+          blurb: "Wisdom, doodles, tiny cakes",
+          scenes: [
+            {
+              speaker: "Nahida",
+              text: "The Akasha says this is a date. I edited the entry to say friendship field study. Much safer. Would you like to test the hypothesis?",
+              choices: [
+                { text: "Bring a notebook and snacks.", bond: 2 },
+                { text: "Ask if the notebook is edible.", bond: 1 },
+              ],
+            },
+            {
+              speaker: "Nahida",
+              text: "Our mission is to interview a mushroom that claims it invented jazz. It only speaks in bubbles.",
+              choices: [
+                { text: "Compliment the mushroom's confidence.", bond: 2 },
+                { text: "Ask the mushroom for financial advice.", bond: 1 },
+              ],
+            },
+            {
+              speaker: "Paimon",
+              text: "The mushroom just bubbled out a restaurant coupon. Paimon respects academia now.",
+              choices: [
+                { text: "Split the coupon fairly.", bond: 2 },
+                { text: "Frame it as historical evidence.", bond: 1 },
+              ],
+            },
+            {
+              speaker: "Nahida",
+              text: "I learned that people relax when someone listens carefully. Also that Paimon can smell coupons from three streets away.",
+              choices: [
+                { text: "Say that listening is a kind of magic.", bond: 2 },
+                { text: "Say coupons are also magic.", bond: 1 },
+              ],
+            },
+          ],
+          endings: {
+            good: "Nahida gives you a gold star labeled Excellent Friend Scientist. Paimon eats the backup stickers.",
+            ok: "You complete the field study. The mushroom publishes a paper called Bubble Bubble Coupon Trouble.",
+          },
+        },
+        yae: {
+          name: "Yae Miko",
+          type: "Chaos Date Route",
+          color: "linear-gradient(135deg, #4f254b, #8b4771 50%, #2c1b4d)",
+          image: assets.yae,
+          blurb: "Shrine gossip, fox mischief",
+          scenes: [
+            {
+              speaker: "Yae Miko",
+              text: "How charming. The Akasha has matched me with someone who looks like they would believe a cursed vending machine exists.",
+              choices: [
+                { text: "Ask where the vending machine is.", bond: 2 },
+                { text: "Deny everything suspiciously.", bond: 1 },
+              ],
+            },
+            {
+              speaker: "Yae Miko",
+              text: "Tonight's date is simple: you help me judge light novels. The loser must read the title out loud in public.",
+              choices: [
+                { text: "Pick the one with 47 words in the title.", bond: 2 },
+                { text: "Pretend to faint dramatically.", bond: 1 },
+              ],
+            },
+            {
+              speaker: "Paimon",
+              text: "The book is called I Became a Teapot and My Landlord Is a Thunder Goddess. Paimon fears art.",
+              choices: [
+                { text: "Give it five stars for bravery.", bond: 2 },
+                { text: "Ask if the teapot pays rent.", bond: 1 },
+              ],
+            },
+            {
+              speaker: "Yae Miko",
+              text: "Not bad. You have the survival instinct of a confused tanuki and the literary taste of a fireworks accident.",
+              choices: [
+                { text: "Accept this as a compliment.", bond: 2 },
+                { text: "Ask for merch rights.", bond: 1 },
+              ],
+            },
+          ],
+          endings: {
+            good: "Yae publishes your date as a bestseller. You receive royalties in snacks and mild emotional damage.",
+            ok: "Yae says you were entertaining enough to not be turned into a footnote. Romantic? Maybe. Profitable? Definitely.",
+          },
+        },
+        raiden: {
+          name: "Raiden Shogun",
+          type: "Dango Diplomacy Route",
+          color: "linear-gradient(135deg, #27204f, #5e3f91 50%, #201534)",
+          image: assets.raiden,
+          blurb: "Dango milk, serious staring",
+          scenes: [
+            {
+              speaker: "Raiden",
+              text: "The application says we are compatible because we both have a history of poor menu choices. Explain.",
+              choices: [
+                { text: "Offer dango milk as evidence.", bond: 2 },
+                { text: "Blame Paimon immediately.", bond: 1 },
+              ],
+            },
+            {
+              speaker: "Raiden",
+              text: "A date should pursue eternity. This cafe offers unlimited refills for one hour. Is that close?",
+              choices: [
+                { text: "Declare it temporary eternity.", bond: 2 },
+                { text: "Ask if refills can be legislated.", bond: 1 },
+              ],
+            },
+            {
+              speaker: "Paimon",
+              text: "The Shogun has challenged the dessert menu to honorable combat. The dessert menu is losing.",
+              choices: [
+                { text: "Cheer for peaceful negotiation.", bond: 2 },
+                { text: "Order backup pudding.", bond: 1 },
+              ],
+            },
+            {
+              speaker: "Raiden",
+              text: "I see. Eternity may be less about things never changing and more about choosing another cup together.",
+              choices: [
+                { text: "Raise your cup solemnly.", bond: 2 },
+                { text: "Ask for a commemorative straw.", bond: 1 },
+              ],
+            },
+          ],
+          endings: {
+            good: "Raiden grants the cafe eternal protection. The receipt is framed as a national artifact.",
+            ok: "You survive dango diplomacy. Paimon calls this a political marriage between snacks and nonsense.",
+          },
+        },
+        hutao: {
+          name: "Hu Tao",
+          type: "Ghost Picnic Route",
+          color: "linear-gradient(135deg, #43212f, #8f3a37 48%, #1f2b43)",
+          image: assets.hutao,
+          blurb: "Poems, pranks, ghost snacks",
+          scenes: [
+            {
+              speaker: "Hu Tao",
+              text: "Welcome to my totally normal picnic. Ignore the ghost setting up a tiny chair. He is the chaperone.",
+              choices: [
+                { text: "Offer the ghost a napkin.", bond: 2 },
+                { text: "Ask if ghosts pay cover charge.", bond: 1 },
+              ],
+            },
+            {
+              speaker: "Hu Tao",
+              text: "First activity: romantic poetry. I already wrote one. Moon bright, soup hot, coupon expires, plot twist.",
+              choices: [
+                { text: "Applaud like it changed literature.", bond: 2 },
+                { text: "Ask where the soup came from.", bond: 1 },
+              ],
+            },
+            {
+              speaker: "Paimon",
+              text: "The ghost is wearing sunglasses now. Paimon cannot legally explain why this is cool.",
+              choices: [
+                { text: "Compliment the drip.", bond: 2 },
+                { text: "Request ghost fashion advice.", bond: 1 },
+              ],
+            },
+            {
+              speaker: "Hu Tao",
+              text: "You passed the vibe check. Not everyone can picnic with a ghost and keep their sandwich spiritually intact.",
+              choices: [
+                { text: "Write a sandwich poem together.", bond: 2 },
+                { text: "Ask for haunted leftovers.", bond: 1 },
+              ],
+            },
+          ],
+          endings: {
+            good: "Hu Tao declares you honorary assistant picnic director. The ghost gives your sandwich five spectral stars.",
+            ok: "The picnic ends with poetry, crumbs, and one ghost doing finger guns. Honestly, that counts.",
+          },
+        },
+      };
+
+      const menu = document.querySelector("#menu");
+      const cards = document.querySelector("#cards");
+      const dialogue = document.querySelector("#dialogue");
+      const scene = document.querySelector("#scene");
+      const portrait = document.querySelector("#portrait");
+      const fallbackName = document.querySelector("#fallbackName");
+      const routeType = document.querySelector("#routeType");
+      const speaker = document.querySelector("#speaker");
+      const line = document.querySelector("#line");
+      const choices = document.querySelector("#choices");
+      const bondBar = document.querySelector("#bondBar");
+      const homeButton = document.querySelector("#home");
+      const toast = document.querySelector("#toast");
+
+      let currentRoute = null;
+      let sceneIndex = 0;
+      let bond = 0;
+      let toastTimer = 0;
+
+      function buildCards() {
+        cards.innerHTML = "";
+        Object.entries(routes).forEach(([key, route]) => {
+          const button = document.createElement("button");
+          button.className = "card";
+          button.type = "button";
+          button.innerHTML = `
+            <img src="${route.image}" alt="${route.name}" loading="lazy">
+            <strong>${route.name}</strong>
+            <span>${route.blurb}</span>
+          `;
+          button.addEventListener("click", () => startRoute(key));
+          cards.appendChild(button);
+        });
+      }
+
+      function startRoute(key) {
+        currentRoute = routes[key];
+        sceneIndex = 0;
+        bond = 0;
+        menu.style.display = "none";
+        dialogue.style.display = "grid";
+        scene.style.setProperty("--scene-bg", currentRoute.color);
+        portrait.src = currentRoute.image;
+        portrait.alt = currentRoute.name;
+        portrait.classList.remove("enter");
+        void portrait.offsetWidth;
+        portrait.classList.add("enter");
+        fallbackName.textContent = currentRoute.name;
+        routeType.textContent = currentRoute.type;
+        updateBond();
+        renderScene();
+      }
+
+      function renderScene() {
+        const item = currentRoute.scenes[sceneIndex];
+        speaker.textContent = item.speaker;
+        typeLine(item.text);
+        choices.innerHTML = "";
+        item.choices.forEach((choice) => {
+          const button = document.createElement("button");
+          button.className = "choice";
+          button.type = "button";
+          button.textContent = choice.text;
+          button.addEventListener("click", () => pick(choice));
+          choices.appendChild(button);
+        });
+      }
+
+      function pick(choice) {
+        bond += choice.bond;
+        updateBond();
+        showToast(choice.bond > 1 ? "Bond up. Extremely canon in your browser." : "Bond up. Paimon is taking notes.");
+        sceneIndex += 1;
+
+        if (sceneIndex >= currentRoute.scenes.length) {
+          showEnding();
+        } else {
+          renderScene();
+        }
+      }
+
+      function showEnding() {
+        const text = bond >= 7 ? currentRoute.endings.good : currentRoute.endings.ok;
+        speaker.textContent = currentRoute.name;
+        typeLine(text);
+        choices.innerHTML = "";
+        [
+          ["Try another route", showMenu],
+          ["Replay this route", () => startRoute(routeKeyByName(currentRoute.name))],
+        ].forEach(([label, action]) => {
+          const button = document.createElement("button");
+          button.className = "choice";
+          button.type = "button";
+          button.textContent = label;
+          button.addEventListener("click", action);
+          choices.appendChild(button);
+        });
+      }
+
+      function typeLine(text) {
+        line.textContent = "";
+        let index = 0;
+        const chunk = () => {
+          line.textContent = text.slice(0, index);
+          index += 2;
+          if (index <= text.length + 2) requestAnimationFrame(chunk);
+        };
+        chunk();
+      }
+
+      function updateBond() {
+        bondBar.style.setProperty("--love", `${Math.min(100, 18 + bond * 10)}%`);
+      }
+
+      function showMenu() {
+        currentRoute = null;
+        menu.style.display = "grid";
+        dialogue.style.display = "none";
+        scene.style.setProperty("--scene-bg", "linear-gradient(135deg, #51336d, #1f2239)");
+        portrait.removeAttribute("src");
+        portrait.alt = "";
+        fallbackName.textContent = "";
+      }
+
+      function routeKeyByName(name) {
+        return Object.keys(routes).find((key) => routes[key].name === name);
+      }
+
+      function showToast(text) {
+        clearTimeout(toastTimer);
+        toast.textContent = text;
+        toast.classList.add("show");
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 1150);
+      }
+
+      portrait.addEventListener("error", () => {
+        portrait.style.display = "none";
+        fallbackName.style.display = "block";
+      });
+
+      portrait.addEventListener("load", () => {
+        portrait.style.display = "block";
+        fallbackName.style.display = "none";
+      });
+
+      homeButton.addEventListener("click", showMenu);
+
+      buildCards();
+      showMenu();
+    </script>
+  </body>
+</html>
