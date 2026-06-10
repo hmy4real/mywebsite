@@ -1,1 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Velvet Snake</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="game-panel" aria-label="Snake game">
+        <div class="topbar">
+          <div>
+            <p class="eyebrow">Velvet Snake</p>
+            <h1>Chase the glow.</h1>
+          </div>
+          <div class="stats" aria-label="Game stats">
+            <div class="stat">
+              <span>Score</span>
+              <strong id="score">0</strong>
+            </div>
+            <div class="stat">
+              <span>Best</span>
+              <strong id="best">0</strong>
+            </div>
+          </div>
+        </div>
 
+        <div class="board-wrap">
+          <canvas id="game" width="720" height="720" aria-label="Snake board"></canvas>
+          <div class="overlay is-visible" id="overlay">
+            <div class="overlay-panel">
+              <p id="statusLabel">Ready</p>
+              <h2 id="statusTitle">Glide through the garden</h2>
+              <button id="primaryAction" type="button">Start</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button class="icon-button" id="restart" type="button" aria-label="Restart" title="Restart">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 3-6.7" />
+              <path d="M3 3v6h6" />
+            </svg>
+          </button>
+          <button class="icon-button" id="pause" type="button" aria-label="Pause" title="Pause">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 5v14" />
+              <path d="M15 5v14" />
+            </svg>
+          </button>
+          <div class="mode-group" aria-label="Speed">
+            <button class="mode is-active" data-speed="easy" type="button">Calm</button>
+            <button class="mode" data-speed="normal" type="button">Swift</button>
+            <button class="mode" data-speed="hard" type="button">Wild</button>
+          </div>
+          <div class="hint">Arrow keys, WASD, or swipe</div>
+        </div>
+      </section>
+
+      <aside class="side-panel" aria-label="Game details">
+        <div class="orbital">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="mini-stats">
+          <div>
+            <span>Length</span>
+            <strong id="length">3</strong>
+          </div>
+          <div>
+            <span>Tempo</span>
+            <strong id="tempo">Calm</strong>
+          </div>
+        </div>
+        <div class="palette">
+          <span style="--swatch: #26f2a8"></span>
+          <span style="--swatch: #ffcf5a"></span>
+          <span style="--swatch: #fb6f92"></span>
+          <span style="--swatch: #4ca7ff"></span>
+        </div>
+      </aside>
+    </main>
+
+    <script src="game.js"></script>
+  </body>
+</html>
