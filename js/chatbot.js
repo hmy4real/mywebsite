@@ -290,7 +290,11 @@ function isBanReply(reply) {
 }
 
 function saveConversationHistory() {
-  localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(conversation.slice(-40)));
+  try {
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(conversation.slice(-40)));
+  } catch (error) {
+    console.warn("Chat history could not be saved; this conversation remains available until reload.", error);
+  }
 }
 
 function scrollChatToBottom() {
@@ -369,7 +373,7 @@ function pruneChatAfterMessage(messageElement) {
 
 function isTextAttachment(file) {
   return /^text\//.test(file.type)
-    || /\.(txt|md|csv|json|js|html|css|py|java)$/i.test(file.name);
+    || /\.(txt|md|markdown|mdown|tex|latex|csv|json|js|html|css|py|java)$/i.test(file.name);
 }
 
 function formatFileSize(bytes) {
@@ -636,7 +640,7 @@ function formatBotReply(text) {
   const wrapper = document.createElement("div");
   wrapper.className = "chat-rendered";
 
-  const rawText = normalizeReplyParagraphs(String(text || ""));
+  const rawText = String(text || "").replace(/\r\n?/g, "\n");
   const { source, mathBlocks } = extractMathBlocks(rawText);
   const html = window.marked
     ? window.marked.parse(source, { breaks: true, gfm: true })
@@ -647,11 +651,19 @@ function formatBotReply(text) {
       ALLOWED_TAGS: [
         "a", "blockquote", "br", "code", "del", "div", "em", "h1", "h2", "h3",
         "h4", "hr", "li", "ol", "p", "pre", "span", "strong", "table", "tbody",
-        "td", "th", "thead", "tr", "ul"
+        "td", "th", "thead", "tr", "ul", "input", "h5", "h6"
       ],
-      ALLOWED_ATTR: ["class", "href", "rel", "target"]
+      ALLOWED_ATTR: ["class", "href", "rel", "target", "type", "checked", "disabled", "start", "align"]
     })
-    : html;
+    : fallbackMarkdown(source);
+
+  wrapper.querySelectorAll("input").forEach((input) => {
+    if (input.type !== "checkbox") {
+      input.remove();
+    } else {
+      input.disabled = true;
+    }
+  });
 
   restoreMathBlocks(wrapper, mathBlocks);
   highlightCodeBlocks(wrapper);
@@ -663,7 +675,11 @@ function formatBotReply(text) {
 function highlightCodeBlocks(container) {
   container.querySelectorAll("pre code").forEach((code) => {
     if (window.hljs) {
-      window.hljs.highlightElement(code);
+      try {
+        window.hljs.highlightElement(code);
+      } catch {
+        // Unknown language labels should not prevent the reply from rendering.
+      }
 
       if (code.querySelector(".hljs-keyword, .hljs-string, .hljs-number, .hljs-title, .hljs-built_in")) {
         return;
@@ -741,118 +757,26 @@ function addCodeCopyButtons(container) {
     updateCodeFrameScrollState(frame, pre);
     requestAnimationFrame(() => updateCodeFrameScrollState(frame, pre));
     pre.addEventListener("scroll", () => updateCodeFrameScrollState(frame, pre), { passive: true });
-    window.addEventListener("resize", () => updateCodeFrameScrollState(frame, pre), { passive: true });
   });
 }
 
 function updateCodeFrameScrollState(frame, pre) {
   const maxScroll = pre.scrollWidth - pre.clientWidth;
   const scrollLeft = pre.scrollLeft;
-
   frame.classList.toggle("can-scroll-left", scrollLeft > 1);
   frame.classList.toggle("can-scroll-right", maxScroll - scrollLeft > 1);
 }
 
-function normalizeReplyParagraphs(text) {
-  return text
-    .replace(/\r\n/g, "\n")
-    .split(/\n{2,}/)
-    .map((block) => {
-      if (/^\s*([-*+]|\d+\.)\s+/m.test(block) || /```/.test(block)) {
-        return block;
-      }
-
-      const normalized = block
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .join("\n\n");
-
-      return normalized.includes("\n\n") ? normalized : splitLongParagraph(normalized);
-    })
-    .join("\n\n");
-}
-
-function splitLongParagraph(text) {
-  if (text.length < 360) {
-    return text;
-  }
-
-  const sentences = splitTextIntoSentences(text);
-
-  if (sentences.length < 2) {
-    return chunkLongText(text);
-  }
-
-  const paragraphs = [];
-  let current = "";
-
-  sentences.forEach((sentence) => {
-    const trimmed = sentence.trim();
-
-    if (!trimmed) {
-      return;
-    }
-
-    const next = current ? `${current} ${trimmed}` : trimmed;
-
-    if (current && next.length > 300) {
-      paragraphs.push(current);
-      current = trimmed;
-    } else {
-      current = next;
-    }
-  });
-
-  if (current) {
-    paragraphs.push(current);
-  }
-
-  return paragraphs.join("\n\n");
-}
-
-function splitTextIntoSentences(text) {
-  const placeholder = "STEVEGPT_ABBR_DOT";
-  const protectedText = text.replace(/\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|Mt|vs|etc|e\.g|i\.e)\./gi, (match) => (
-    match.replace(/\./g, placeholder)
-  ));
-
-  return protectedText
-    .split(/(?<=[.!?])\s+/)
-    .map((sentence) => sentence.replaceAll(placeholder, "."));
-}
-
-function chunkLongText(text) {
-  const paragraphs = [];
-  let remaining = text.trim();
-
-  while (remaining.length > 320) {
-    let splitAt = Math.max(
-      remaining.lastIndexOf(". ", 300),
-      remaining.lastIndexOf(", ", 300),
-      remaining.lastIndexOf(" ", 300)
-    );
-
-    if (splitAt < 180) {
-      splitAt = 300;
-    }
-
-    paragraphs.push(remaining.slice(0, splitAt + 1).trim());
-    remaining = remaining.slice(splitAt + 1).trim();
-  }
-
-  if (remaining) {
-    paragraphs.push(remaining);
-  }
-
-  return paragraphs.join("\n\n");
-}
 
 function extractMathBlocks(text) {
   const mathBlocks = [];
-  const tokenPrefix = "STEVEGPT_MATH_BLOCK_";
-  const source = text.replace(/(\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|(?<!\$)\$[^\n$]+?\$(?!\$))/g, (match) => {
-    const token = `${tokenPrefix}${mathBlocks.length}`;
+  const tokenPrefix = "STEVEGPTMATH" + crypto.randomUUID().replaceAll("-", "");
+  // Match code first so dollar signs and LaTeX examples stay literal there.
+  const source = text.replace(/^[ \t]{0,3}(\x60{3,}|~{3,})[^\n]*(?:\n[\s\S]*?^[ \t]{0,3}\1[ \t]*(?=\n|$)|[\s\S]*$)|(?:^(?: {4}|\t)[^\n]*(?:\n|$))+|(\x60+)[\s\S]*?\2|(?<!\\)\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|(?<![\\$])\$[^\n$]+?\$(?!\$)/gm, (match) => {
+    if (/^[ \t]*[\x60~]|^(?: {4}|\t)/.test(match)) {
+      return match;
+    }
+    const token = tokenPrefix + mathBlocks.length + "END";
     let formula = match;
     let display = false;
 
@@ -866,10 +790,13 @@ function extractMathBlocks(text) {
       formula = match.slice(2, -2);
     } else if (match.startsWith("$")) {
       formula = match.slice(1, -1);
+      if (/^\s|\s$/.test(formula)) {
+        return match;
+      }
     }
 
     mathBlocks.push({ token, formula: formula.trim(), display });
-    return token;
+    return display ? "\n\n" + token + "\n\n" : token;
   });
 
   return { source, mathBlocks };
@@ -881,7 +808,7 @@ function restoreMathBlocks(container, mathBlocks) {
     const matches = [];
 
     while (walker.nextNode()) {
-      if (walker.currentNode.nodeValue.includes(token)) {
+      if (!walker.currentNode.parentElement.closest("pre, code") && walker.currentNode.nodeValue.includes(token)) {
         matches.push(walker.currentNode);
       }
     }
@@ -906,15 +833,18 @@ function restoreMathBlocks(container, mathBlocks) {
 }
 
 function renderMath(formula, display) {
-  const element = document.createElement(display ? "div" : "span");
+  const element = document.createElement("span");
   element.className = display ? "math-block" : "math-inline";
 
   if (window.katex) {
     try {
       window.katex.render(formula, element, {
         displayMode: display,
-        throwOnError: false,
-        strict: "ignore"
+        throwOnError: true,
+        strict: "ignore",
+        trust: false,
+        maxExpand: 1000,
+        maxSize: 20
       });
       return element;
     } catch {
@@ -1244,6 +1174,35 @@ chatUpload?.addEventListener("change", async () => {
 
 chatInput.addEventListener("paste", handlePastedFiles);
 
+function resizeComposer() {
+  const scrollTop = chatInput.scrollTop;
+  chatInput.style.height = "auto";
+  const style = getComputedStyle(chatInput);
+  const minHeight = parseFloat(style.minHeight);
+  const maxHeight = parseFloat(style.maxHeight);
+  chatInput.style.height = Math.min(maxHeight, Math.max(minHeight, chatInput.scrollHeight)) + "px";
+  chatInput.scrollTop = scrollTop;
+  const bottomSpace = chatForm.offsetHeight + 24;
+  chatMessages.style.paddingBottom = bottomSpace + "px";
+  chatShell.style.scrollPaddingBottom = bottomSpace + "px";
+}
+
+chatInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {
+    event.preventDefault();
+    chatForm.requestSubmit(submitButton);
+  }
+});
+
+window.addEventListener("resize", () => {
+  resizeComposer();
+  chatMessages.querySelectorAll(".code-frame").forEach((frame) => {
+    updateCodeFrameScrollState(frame, frame.querySelector("pre"));
+  });
+}, { passive: true });
+
+new ResizeObserver(resizeComposer).observe(chatForm);
+
 attachmentTray?.addEventListener("click", (event) => {
   const removeButton = event.target.closest(".attachment-remove");
 
@@ -1283,6 +1242,7 @@ chatForm.addEventListener("submit", async (event) => {
   const prompt = message || `Please look at the attached file(s): ${attachmentSummary}`;
 
   chatInput.value = "";
+  resizeComposer();
   pendingAttachments = [];
   renderAttachmentTray();
   updateEmptyState();
@@ -1357,8 +1317,12 @@ chatMessages.addEventListener("click", async (event) => {
   }
 });
 
-chatInput.addEventListener("input", updateEmptyState);
+chatInput.addEventListener("input", () => {
+  resizeComposer();
+  updateEmptyState();
+});
 
 loadConversationHistory();
 updateBanState();
 updateEmptyState();
+resizeComposer();

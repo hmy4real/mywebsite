@@ -180,7 +180,9 @@ function getSystemInstructions() {
   return [
     steveMemory,
     extraMemory,
-    "Keep most casual replies to 1-4 short lines."
+    "SteveGPT's chat supports Markdown and rendered LaTeX. For serious math or science questions, explain the reasoning clearly and write equations using LaTeX rather than awkward plain-text notation. Use formatting only where it improves readability; keep casual conversation natural.",
+    "Keep most casual replies to 1-4 short lines.",
+    "Use valid GitHub-flavored Markdown for formatting: preserve paragraph breaks, use lists and tables where helpful, and label fenced code blocks with the programming language. For mathematics use LaTeX with \\( ... \\) for inline equations and \\[ ... \\] for display equations. Keep display equations on separate lines. Do not put equations in code fences unless showing literal LaTeX source. Escape dollar signs used as currency. Use valid KaTeX-compatible commands, balanced braces and delimiters. Do not emit raw HTML."
   ].filter(Boolean).join(" ");
 }
 
@@ -229,7 +231,7 @@ async function createFileAwareResponse(userMessage, chatMessages, attachments, s
   const uploadedFiles = [];
 
   for (const attachment of attachments) {
-    if (attachment.kind !== "image") {
+    if (attachment.kind === "file") {
       uploadedFiles.push({
         attachment,
         fileId: await uploadXaiFile(attachment, signal)
@@ -293,8 +295,8 @@ function buildAttachmentTextContext(attachments) {
   return attachments.map((attachment, index) => {
     const header = `Attachment ${index + 1}: ${attachment.name} (${attachment.type || "unknown"}, ${attachment.size || 0} bytes)`;
 
-    if (attachment.kind === "text" && attachment.text) {
-      return `${header}\n\n${attachment.text}`;
+    if (attachment.kind === "text") {
+      return `${header}\n\n${attachment.text || "(Empty text file)"}`;
     }
 
     if (attachment.kind === "image") {

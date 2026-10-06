@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Chat Rendering Regression Tests</title>
+  <link rel="stylesheet" href="../css/capstone.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <style>
+    body { overflow: auto; padding: 24px; }
+    iframe { display: none; }
+    #results { max-width: 900px; margin: auto; }
+    section { padding: 16px 0; border-bottom: 1px solid #ddd; }
+  </style>
+</head>
+<body>
+  <main id="results"><h1>Chat Rendering Tests</h1><p id="status">Running...</p></main>
+  <iframe src="../ai/" title="Chat rendering runtime"></iframe>
+  <script>
+    document.querySelector("iframe").addEventListener("load", (event) => {
+      const runtime = event.target.contentWindow;
+      const fence = String.fromCharCode(96).repeat(3);
+      const inlineCode = String.fromCharCode(96);
+      const cases = [
+        ["Markdown", "# Heading\n\n**Bold**, *italic*, ~~deleted~~.\n\n- One\n- Two\n\n> Quote",
+          (node) => node.querySelector("h1") && node.querySelector("strong") && node.querySelectorAll("li").length === 2 && node.querySelector("blockquote")],
+        ["Table", "| A | B |\n| --- | --- |\n| 1 | 2 |",
+          (node) => node.querySelectorAll("th").length === 2 && node.querySelectorAll("td").length === 2],
+        ["Task list", "- [x] Done\n- [ ] Pending",
+          (node) => node.querySelectorAll('input[type="checkbox"]:disabled').length === 2],
+        ["Inline equations", "Use \\(x^2 + y^2\\) and $\\frac{1}{2}$.",
+          (node) => node.querySelectorAll(".katex").length === 2],
+        ["Display equations", "\\[\n\\begin{aligned}\nx &= 1 \\\\\ny &= \\frac{2}{3}\n\\end{aligned}\n\\]\n\n$$\\sum_{i=1}^n i$$",
+          (node) => node.querySelectorAll(".katex-display").length === 2],
+        ["Literal code", fence + "python\nprice = '$x$'\n\n    print(price)\n" + fence + "\n\n" + inlineCode + "\\(x\\)" + inlineCode,
+          (node) => !node.querySelector(".katex") && node.querySelector("pre code").textContent === "price = '$x$'\n\n    print(price)\n" && node.querySelector(".code-copy")],
+        ["Tilde code fence", "~~~text\n$$literal$$\n~~~",
+          (node) => !node.querySelector(".katex") && node.querySelector("pre code").textContent.includes("$$literal$$")],
+        ["Indented code", "Example:\n\n    value = '$x$'\n    print(value)",
+          (node) => !node.querySelector(".katex") && node.querySelector("pre code").textContent.includes("'$x$'") && !node.textContent.includes("STEVEGPTMATH")],
+        ["Unclosed streaming fence", fence + "text\n\\(literal\\)",
+          (node) => !node.querySelector(".katex") && node.querySelector("pre code")],
+        ["Currency", "It costs $5 and $10.",
+          (node) => !node.querySelector(".katex") && node.textContent.trim() === "It costs $5 and $10."],
+        ["Many equations", Array.from({ length: 15 }, (_, i) => "$x_{" + i + "}$").join(" "),
+          (node) => node.querySelectorAll(".katex").length === 15 && !node.textContent.includes("STEVEGPTMATH")],
+        ["Escaped dollar", "Price: \\$5.",
+          (node) => !node.querySelector(".katex") && node.textContent.trim() === "Price: $5."],
+        ["Invalid equation fallback", "\\(\\unknowncommand{x}\\)",
+          (node) => !node.querySelector(".katex-error") && node.textContent.includes("\\unknowncommand{x}")],
+        ["Sanitization", "<img src=x onerror=alert(1)><script>alert(1)<" + "/script>\n\n[link](javascript:alert(1))",
+          (node) => !node.querySelector("script, img, [onerror], a[href^='javascript:']")]
+      ];
+      let failures = 0;
+      for (const [name, source, verify] of cases) {
+        const section = document.createElement("section");
+        const heading = document.createElement("h2");
+        try {
+          const node = runtime.formatBotReply(source);
+          if (!verify(node)) throw new Error("Assertion failed");
+          heading.textContent = "PASS: " + name;
+          section.append(heading, node);
+        } catch (error) {
+          failures += 1;
+          heading.textContent = "FAIL: " + name + " - " + error.message;
+          section.append(heading);
+        }
+        document.querySelector("#results").append(section);
+      }
+      document.querySelector("#status").textContent = (cases.length - failures) + "/" + cases.length + " passed";
+      document.body.dataset.failures = String(failures);
+    });
+  </script>
+</body>
+</html>

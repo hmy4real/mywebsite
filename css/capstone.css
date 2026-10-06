@@ -416,6 +416,7 @@ body::after {
 }
 
 .chat-message.user .chat-bubble {
+  white-space: pre-wrap;
   color: #ffffff;
   background: linear-gradient(180deg, #303035, #111113);
   box-shadow: 0 14px 34px rgba(17, 17, 17, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.18);
@@ -637,9 +638,29 @@ body::after {
 }
 
 .math-block {
+  display: block;
   max-width: 100%;
   margin: 0.55em 0;
   overflow-x: auto;
+}
+
+.chat-rendered table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.chat-rendered th,
+.chat-rendered td {
+  padding: 8px 12px;
+  border: 1px solid rgba(95, 111, 138, 0.2);
+  text-align: left;
+}
+
+.chat-rendered blockquote {
+  padding-left: 16px;
+  border-left: 3px solid rgba(95, 111, 138, 0.35);
 }
 
 .chat-reply-actions {
@@ -707,7 +728,7 @@ body::after {
   z-index: 8;
   width: var(--chat-width);
   margin: 0 auto;
-  padding: 18px 0 30px;
+  padding: 18px 0 9px;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto;
@@ -733,16 +754,16 @@ body::after {
   z-index: -1;
   left: -3px;
   right: -3px;
-  top: -8px;
-  height: 64px;
-  border-radius: 999px;
+  top: -3px;
+  bottom: -3px;
+  border-radius: 28px;
   pointer-events: none;
   background: rgba(238, 245, 255, 0.44);
   filter: blur(5px);
 }
 
 .chat-form::after {
-  content: "SteveGPT is AI and can make mistakes.";
+  content: "";
   position: absolute;
   z-index: -2;
   left: calc((var(--chat-width) - 100vw) / 2);
@@ -774,7 +795,7 @@ body.chat-is-empty .chat-form::after {
   z-index: 0;
   left: 0;
   right: 0;
-  top: 86px;
+  top: 0;
   bottom: auto;
   padding: 0;
   background: none;
@@ -794,30 +815,54 @@ body:not(.chat-is-empty) .chat-form {
   display: none;
 }
 
-.chat-input-wrap input {
+.chat-disclaimer {
+  grid-column: 1;
+  grid-row: 3;
+  margin: 10px 0 0;
+  color: rgba(27, 27, 31, 0.38);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.chat-input-wrap textarea {
   position: relative;
   z-index: 1;
   width: 100%;
   min-width: 0;
-  min-height: 56px;
-  border: 1px solid rgba(255, 255, 255, 0.92);
-  border-radius: 999px;
-  padding: 0 78px 0 60px;
+  min-height: 24px;
+  border: 0;
+  border-radius: 0;
+  padding: 0 60px;
+  display: block;
+  height: 24px;
+  max-height: 168px;
+  box-sizing: border-box;
+  resize: none;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
   color: #1b1b1f;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.96), 0 10px 22px rgba(105, 132, 186, 0.06);
-  backdrop-filter: blur(10px) saturate(120%);
-  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  background: transparent;
   font: inherit;
   font-size: 1rem;
+  line-height: 24px;
   outline: none;
 }
 
-.chat-input-wrap input:focus {
+.chat-input-wrap {
+  padding: 15px 0;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.96), 0 10px 22px rgba(105, 132, 186, 0.06);
+}
+
+.chat-input-wrap:focus-within {
   border-color: rgba(95, 111, 138, 0.55);
 }
 
-.chat-input-wrap input:disabled {
+.chat-input-wrap textarea:disabled {
   color: rgba(27, 27, 31, 0.58);
   background: rgba(235, 238, 244, 0.78);
   cursor: not-allowed;
@@ -826,7 +871,7 @@ body:not(.chat-is-empty) .chat-form {
 .chat-send {
   position: absolute;
   z-index: 2;
-  top: 7px;
+  bottom: 7px;
   right: 7px;
   width: 42px;
   min-width: 42px;
@@ -882,7 +927,7 @@ body:not(.chat-is-empty) .chat-form {
 .chat-attach {
   position: absolute;
   z-index: 3;
-  top: 7px;
+  bottom: 7px;
   left: 7px;
   width: 42px;
   height: 42px;
@@ -1267,9 +1312,9 @@ body:not(.chat-is-empty) .chat-form {
   .chat-input-wrap::before {
     left: -2px;
     right: -2px;
-    top: -6px;
-    height: 58px;
-    border-radius: 999px;
+    top: -2px;
+    bottom: -2px;
+    border-radius: 26px;
     filter: blur(4px);
   }
 
@@ -1284,20 +1329,25 @@ body:not(.chat-is-empty) .chat-form {
   body.chat-is-empty .chat-form::after {
     left: 0;
     right: 0;
-    top: 82px;
+    top: 0;
     bottom: auto;
     padding: 0;
     background: none;
   }
 
-  .chat-input-wrap input {
-    min-height: 52px;
+  .chat-input-wrap textarea {
+    max-height: 172px;
     padding-right: 62px;
     padding-left: 56px;
   }
 
+  .chat-input-wrap {
+    padding: 13px 0;
+    border-radius: 26px;
+  }
+
   .chat-send {
-    top: 7px;
+    bottom: 7px;
     right: 7px;
     width: 38px;
     min-width: 38px;
@@ -1311,7 +1361,7 @@ body:not(.chat-is-empty) .chat-form {
   }
 
   .chat-attach {
-    top: 7px;
+    bottom: 7px;
     left: 7px;
     width: 38px;
     height: 38px;

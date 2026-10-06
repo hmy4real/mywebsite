@@ -16,6 +16,10 @@
       "dest": "/api/chat.js"
     },
     {
+      "src": "/ai/?",
+      "dest": "/ai/index.html"
+    },
+    {
       "src": "/capstone",
       "dest": "/capstone/index.html"
     },
