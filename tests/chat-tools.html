@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Streaming Sources Regression</title>
+<p id="status">Running</p>
+<iframe src="../ai/" title="Chat runtime" style="width:100%;height:650px;border:0"></iframe>
+<script>
+document.querySelector('iframe').addEventListener('load', async event => {
+  const runtime = event.target.contentWindow;
+  try {
+    const message = runtime.addMessage('', 'bot');
+    const encoder = new TextEncoder();
+    const frames = [
+      { status: 'Searching', searching: true },
+      { sources: [{ url: 'https://example.com', title: 'Example source' }, { url: 'javascript:alert(1)', title: 'Unsafe' }] },
+      { delta: 'A researched answer.' },
+      { sources: [{ url: 'https://example.com', title: 'Example source' }, { url: 'https://example.org', title: 'Second source' }] },
+      { status: '', searching: false }
+    ];
+    const response = new Response(new ReadableStream({ start(controller) {
+      for (const frame of frames) controller.enqueue(encoder.encode('data: ' + JSON.stringify(frame) + '\n\n'));
+      controller.close();
+    } }));
+    const result = await runtime.readReplyStream(response,
+      text => runtime.updateBotMessage(message, text),
+      metadata => runtime.renderReplySources(message, metadata));
+    if (result.reply !== 'A researched answer.') throw new Error('Reply corrupted');
+    if (message.querySelectorAll('.chat-source-links a').length !== 2) throw new Error('Missing sources');
+    if (message.querySelector('.chat-source-status').textContent !== 'Sources') throw new Error('Stale status');
+    runtime.updateBotMessage(message, result.reply, { actions: true });
+    if (message.querySelectorAll('.chat-source-links a').length !== 2) throw new Error('Final render lost sources');
+    document.querySelector('#status').textContent = 'PASS: live source updates, safe links, final rendering';
+  } catch (error) { document.querySelector('#status').textContent = 'FAIL: ' + error.message; }
+});
+</script>
+</html>
