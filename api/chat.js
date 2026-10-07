@@ -173,7 +173,7 @@ async function handleAgentRequest(userMessage, chatMessages, attachments, respon
     }
     const input = [...chatMessages.slice(0, -1), { role: "user", content }];
     const mustSearch = /\b(who\s+(?:is|are|was|were)|who['’]?s|search|look\s*up|latest|current|today|news)\b|谁是|是谁|搜索|最新/i.test(userMessage);
-    const wantsX = /\b(tweets?|twitter|on\s+x|x\s+posts?)\b|x\.com|推特/i.test(userMessage);
+    const wantsX = /\b(tweets?|twitter|on\s+x|search\s+x|x\s+posts?)\b|x\.com|推特/i.test(userMessage);
     const searchTool = wantsX ? { type: "x_search", enable_image_understanding: true, enable_video_understanding: true } : { type: "web_search", enable_image_understanding: true };
     const upstream = await fetch("https://api.x.ai/v1/responses", {
       method: "POST",
