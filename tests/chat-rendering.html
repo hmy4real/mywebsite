@@ -51,6 +51,11 @@
           (node) => !node.querySelector("script, img, [onerror], a[href^='javascript:']")]
       ];
       let failures = 0;
+      const input = runtime.document.querySelector("#chatInput");
+      input.disabled = true;
+      const disabledComposer = runtime.document.querySelector(".chat-input-wrap").cloneNode(true);
+      cases.push(["Disabled composer", "",
+        () => runtime.getComputedStyle(input).backgroundColor === "rgba(0, 0, 0, 0)"]);
       for (const [name, source, verify] of cases) {
         const section = document.createElement("section");
         const heading = document.createElement("h2");
@@ -59,6 +64,9 @@
           if (!verify(node)) throw new Error("Assertion failed");
           heading.textContent = "PASS: " + name;
           section.append(heading, node);
+          if (name === "Disabled composer") {
+            section.append(disabledComposer);
+          }
         } catch (error) {
           failures += 1;
           heading.textContent = "FAIL: " + name + " - " + error.message;

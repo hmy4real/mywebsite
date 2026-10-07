@@ -840,6 +840,8 @@ body:not(.chat-is-empty) .chat-form {
   max-height: 168px;
   box-sizing: border-box;
   resize: none;
+  appearance: none;
+  -webkit-appearance: none;
   overflow-y: auto;
   overflow-wrap: anywhere;
   color: #1b1b1f;
@@ -864,7 +866,7 @@ body:not(.chat-is-empty) .chat-form {
 
 .chat-input-wrap textarea:disabled {
   color: rgba(27, 27, 31, 0.58);
-  background: rgba(235, 238, 244, 0.78);
+  background: transparent;
   cursor: not-allowed;
 }
 
