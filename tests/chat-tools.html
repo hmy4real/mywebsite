@@ -26,9 +26,14 @@ document.querySelector('iframe').addEventListener('load', async event => {
       metadata => runtime.renderReplySources(message, metadata));
     if (result.reply !== 'A researched answer.') throw new Error('Reply corrupted');
     if (message.querySelectorAll('.chat-source-links a').length !== 2) throw new Error('Missing sources');
-    if (message.querySelector('.chat-source-status').textContent !== 'Sources') throw new Error('Stale status');
+    if (message.querySelector('.chat-source-status')) throw new Error('Stale status');
+    if (message.querySelector('.chat-sources summary').textContent !== '2 sources') throw new Error('Missing count');
+    if (message.querySelector('.chat-sources details').open) throw new Error('Sources should start collapsed');
+    message.querySelector('.chat-sources summary').click();
+    await new Promise(resolve => setTimeout(resolve, 50));
     runtime.updateBotMessage(message, result.reply, { actions: true });
     if (message.querySelectorAll('.chat-source-links a').length !== 2) throw new Error('Final render lost sources');
+    if (!message.querySelector('.chat-sources details').open) throw new Error('Final render lost expanded state');
     document.querySelector('#status').textContent = 'PASS: live source updates, safe links, final rendering';
   } catch (error) { document.querySelector('#status').textContent = 'FAIL: ' + error.message; }
 });

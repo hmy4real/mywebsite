@@ -54,10 +54,15 @@ async function main() {
   }
   assert.equal(requests.length, 4, "Text files should not trigger extra binary uploads");
   await context.handleAgentRequest("Who is Ada Lovelace?", [{ role: "user", content: "Who is Ada Lovelace?" }], [], { writeHead() {}, write() {}, end() {} });
-  assert.equal(requests.at(-1).body.tool_choice, "required");
+  assert.equal(requests.at(-1).body.tool_choice, "auto");
+  assert.ok(requests.at(-1).body.input.at(-1).content[0].text.includes("Search the web before answering"));
   assert.deepEqual(requests.at(-1).body.tools.map(tool => tool.type), ["web_search"]);
   await context.handleAgentRequest("Search X posts about space", [{ role: "user", content: "Search X posts about space" }], [], { writeHead() {}, write() {}, end() {} });
   assert.deepEqual(requests.at(-1).body.tools.map(tool => tool.type), ["x_search"]);
+  await context.handleAgentRequest("whos steve han", [{ role: "user", content: "whos steve han" }], [], { writeHead() {}, write() {}, end() {} });
+  assert.equal(requests.at(-1).body.tool_choice, "auto");
+  assert.equal(requests.at(-1).body.max_output_tokens, 2048);
+  assert.ok(!requests.at(-1).body.input.at(-1).content[0].text.includes("Research instruction:"));
   console.log("PASS: formatting instructions and Markdown/LaTeX attachment payloads");
 }
 
