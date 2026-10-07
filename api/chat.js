@@ -213,7 +213,8 @@ async function forwardAgentStream(upstream, response) {
     if (typeof value.url === "string") {
       try {
         const url = new URL(value.url);
-        if (["http:", "https:"].includes(url.protocol)) sources.set(url.href, { url: url.href, title: String(value.title || sources.get(url.href)?.title || url.hostname).slice(0, 200) });
+        const title = value.title && !/^\d+$/.test(String(value.title)) ? value.title : sources.get(url.href)?.title || url.hostname;
+        if (["http:", "https:"].includes(url.protocol)) sources.set(url.href, { url: url.href, title: String(title).slice(0, 200) });
       } catch {}
     }
     if (Array.isArray(value.citations)) for (const url of value.citations) collect(typeof url === "string" ? { url } : url);
