@@ -20,10 +20,6 @@
       "dest": "/ai/index.html"
     },
     {
-      "src": "/capstone",
-      "dest": "/capstone/index.html"
-    },
-    {
       "src": "/(.*)",
       "dest": "/$1"
     }

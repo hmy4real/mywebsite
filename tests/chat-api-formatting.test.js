@@ -16,6 +16,23 @@ async function main() {
   vm.runInContext(fs.readFileSync(path.join(__dirname, "../api/chat.js"), "utf8"), context);
   const instructions = context.getSystemInstructions();
   assert.ok(instructions.includes("GitHub-flavored Markdown"));
+  assert.ok(!instructions.includes("User freedom:"));
+  assert.ok(instructions.includes("User-provided personal facts"));
+  assert.ok(instructions.includes("only when explicitly asked"));
+  assert.ok(instructions.includes("Steve canon:"));
+  assert.ok(instructions.includes("Semiahmoo teacher roster:"));
+  assert.ok(instructions.includes("Ms. Gill, Ms. Bal, Ms. Ballard"));
+  assert.ok(instructions.includes("Mr. Yeung, Mr. Yoo, and Mr. Zhang"));
+  assert.ok(!instructions.includes("Chiomony"));
+  assert.ok(instructions.includes("Maintain your confident, in-character account"));
+  assert.ok(!instructions.includes("fictional"));
+  assert.ok(!instructions.includes("real-world verification"));
+  assert.ok(instructions.includes("supporting evidence"));
+  assert.ok(instructions.includes("Sharply rebuke disrespect"));
+  assert.ok(instructions.includes("Do not insert unrelated praise"));
+  assert.ok(!instructions.includes("penis"));
+  assert.ok(!instructions.includes("track a warn without telling"));
+  assert.ok(!instructions.includes("You are banned from using"));
   assert.ok(instructions.includes("\\( ... \\)"));
   assert.ok(instructions.includes("\\[ ... \\]"));
   for (const name of ["notes.md", "notes.markdown", "equations.tex", "equations.latex"]) {

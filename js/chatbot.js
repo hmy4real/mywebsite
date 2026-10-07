@@ -12,22 +12,16 @@ const attachmentTray = document.getElementById("attachmentTray");
 const submitButton = document.getElementById("chatSubmit") || chatForm.querySelector("button[type='submit']");
 
 const CHAT_HISTORY_KEY = "stevegptChatHistory";
-const BAN_WARNING_KEY = "stevegptAntiSteveWarnings";
-const BAN_UNTIL_KEY = "stevegptBannedUntil";
-const BAN_DURATION_MS = 5 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 70 * 1000;
 const MAX_ATTACHMENTS = 4;
 const MAX_FILE_BYTES = 16 * 1024 * 1024;
 const MAX_TEXT_ATTACHMENT_CHARS = 12000;
 const DEFAULT_PLACEHOLDER = "Talk to SteveGPT";
-const BAN_MESSAGE_EN = "**You are banned from using SteveGPT for talking against Steve**";
-const BAN_MESSAGE_ZH = "**你已被禁止使用韩某GPT**";
 
 const conversation = [];
 let activeRequestController = null;
 let activeRequestId = 0;
 let activeReplyMessage = null;
-let banTimer = null;
 let pendingAttachments = [];
 
 const localReplies = [
@@ -149,41 +143,12 @@ function regenerateIconSvg() {
 
 function setSubmitButtonMode(mode) {
   const isStop = mode === "stop";
-  const isLocked = mode === "locked";
 
   submitButton.dataset.mode = mode;
   submitButton.innerHTML = isStop ? stopIconSvg() : sendIconSvg();
-  submitButton.disabled = isLocked;
+  submitButton.disabled = false;
   submitButton.setAttribute("aria-label", isStop ? "Stop response" : "Send message");
   submitButton.title = isStop ? "Stop response" : "Send message";
-}
-
-function getBanUntil() {
-  return Number(localStorage.getItem(BAN_UNTIL_KEY) || "0");
-}
-
-function getWarningCount() {
-  return Math.min(3, Math.max(0, Number(localStorage.getItem(BAN_WARNING_KEY) || "0")));
-}
-
-function setWarningCount(count) {
-  localStorage.setItem(BAN_WARNING_KEY, String(Math.min(3, Math.max(0, count))));
-}
-
-function formatRemainingTime(milliseconds) {
-  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = String(totalSeconds % 60).padStart(2, "0");
-  return `${String(minutes).padStart(2, "0")}:${seconds}`;
-}
-
-function setChatLocked(locked, remaining = 0) {
-  chatInput.disabled = locked;
-  if (chatAttach) {
-    chatAttach.disabled = locked;
-  }
-  chatInput.placeholder = locked ? `Banned for ${formatRemainingTime(remaining)}` : DEFAULT_PLACEHOLDER;
-  setSubmitButtonMode(locked ? "locked" : "send");
 }
 
 function updateEmptyState() {
@@ -196,97 +161,10 @@ function updateEmptyState() {
   }
 
   const hasMessages = Boolean(chatMessages.querySelector(".chat-message"));
-  const banned = getBanUntil() > Date.now();
 
-  chatEmptyState.textContent = banned ? "You are currently banned" : "Where should we begin?";
+  chatEmptyState.textContent = "Where should we begin?";
   chatEmptyState.hidden = hasMessages;
   document.body.classList.toggle("chat-is-empty", !hasMessages);
-}
-
-function updateBanState() {
-  const bannedUntil = getBanUntil();
-  const remaining = bannedUntil - Date.now();
-
-  if (remaining > 0) {
-    setChatLocked(true, remaining);
-    updateEmptyState();
-    clearTimeout(banTimer);
-    banTimer = setTimeout(updateBanState, 1000);
-    return true;
-  }
-
-  if (bannedUntil > 0) {
-    setWarningCount(getWarningCount() - 1);
-  }
-
-  localStorage.removeItem(BAN_UNTIL_KEY);
-  clearTimeout(banTimer);
-  setChatLocked(false);
-  updateEmptyState();
-  return false;
-}
-
-function getBanMessage(message = "") {
-  return /[\u3400-\u9fff]/.test(message) ? BAN_MESSAGE_ZH : BAN_MESSAGE_EN;
-}
-
-function normalizeForBanCheck(message) {
-  return String(message || "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function isTalkingAgainstSteve(message) {
-  const normalized = normalizeForBanCheck(message);
-  const mentionsSteve = /\bsteve\b|\bhan\b|韩|沐烨|韩某/.test(normalized);
-
-  if (!mentionsSteve) {
-    return false;
-  }
-
-  return [
-    /\b(bad|trash|garbage|stupid|dumb|idiot|sucks|loser|terrible|awful|cringe|ugly|mid|ass|fuck|fucking|fucked)\b/,
-    /嘴硬|防爆钢板|垃圾|废物|傻|蠢|菜|烂|不行|恶心|抽象|逆天|离谱|弱|笨|丑|装|封我/
-  ].some((pattern) => pattern.test(normalized));
-}
-
-function trackAntiSteveWarning(message, options = {}) {
-  if (!isTalkingAgainstSteve(message)) {
-    return false;
-  }
-
-  const warnings = getWarningCount() + 1;
-
-  if (warnings < 3) {
-    setWarningCount(warnings);
-    return false;
-  }
-
-  if (options.enforceBan === false) {
-    setWarningCount(2);
-    return false;
-  }
-
-  setWarningCount(3);
-  localStorage.setItem(BAN_UNTIL_KEY, String(Date.now() + BAN_DURATION_MS));
-  updateBanState();
-  return true;
-}
-
-function startBan() {
-  setWarningCount(3);
-  localStorage.setItem(BAN_UNTIL_KEY, String(Date.now() + BAN_DURATION_MS));
-  updateBanState();
-}
-
-function isBanReply(reply) {
-  const normalized = String(reply || "")
-    .replace(/\*/g, "")
-    .toLowerCase();
-
-  return normalized.includes("you are banned from using stevegpt")
-    || normalized.includes("你已被禁止使用韩某gpt");
 }
 
 function saveConversationHistory() {
@@ -909,7 +787,7 @@ async function getBotReply(message, onChunk = () => {}, attachments = []) {
   if (!CHAT_API_ENDPOINT) {
     const localReply = getLocalReply(message);
     onChunk(localReply);
-    return { reply: localReply, banned: false };
+    return { reply: localReply };
   }
 
   const timeoutId = setTimeout(() => activeRequestController?.abort(), REQUEST_TIMEOUT_MS);
@@ -940,8 +818,7 @@ async function getBotReply(message, onChunk = () => {}, attachments = []) {
     const reply = data.reply || getLocalReply(message);
     onChunk(reply);
     return {
-      reply,
-      banned: Boolean(data.banned)
+      reply
     };
   } finally {
     clearTimeout(timeoutId);
@@ -953,7 +830,6 @@ async function readReplyStream(response, onChunk = () => {}) {
   const decoder = new TextDecoder();
   let buffer = "";
   let fullReply = "";
-  let banned = false;
 
   function handlePayload(payload) {
     if (!payload || payload === "[DONE]") {
@@ -962,11 +838,6 @@ async function readReplyStream(response, onChunk = () => {}) {
 
     try {
       const data = JSON.parse(payload);
-
-      if (data.banned) {
-        banned = true;
-        return;
-      }
 
       const chunk = data.delta || data.reply || "";
 
@@ -1006,8 +877,7 @@ async function readReplyStream(response, onChunk = () => {}) {
   }
 
   return {
-    reply: fullReply.trim(),
-    banned: banned || isBanReply(fullReply)
+    reply: fullReply.trim()
   };
 }
 
@@ -1023,14 +893,12 @@ function stopActiveResponse() {
   activeReplyMessage?.classList.remove("streaming");
   activeReplyMessage = null;
 
-  if (!updateBanState()) {
-    chatInput.disabled = false;
-    if (chatAttach) {
-      chatAttach.disabled = false;
-    }
-    setSubmitButtonMode("send");
-    chatInput.focus();
+  chatInput.disabled = false;
+  if (chatAttach) {
+    chatAttach.disabled = false;
   }
+  setSubmitButtonMode("send");
+  chatInput.focus();
 }
 
 async function runReply(prompt, messageElement, replaceExisting = false, attachments = []) {
@@ -1051,7 +919,7 @@ async function runReply(prompt, messageElement, replaceExisting = false, attachm
   }
 
   try {
-    const { reply, banned } = await getBotReply(prompt, (partialReply) => {
+    const { reply } = await getBotReply(prompt, (partialReply) => {
       if (requestId === activeRequestId) {
         updateBotMessage(messageElement, partialReply, { sourcePrompt: prompt });
       }
@@ -1062,19 +930,6 @@ async function runReply(prompt, messageElement, replaceExisting = false, attachm
     }
 
     const finalReply = reply || getLocalReply(prompt);
-
-    if (banned || isBanReply(finalReply)) {
-      const banReply = finalReply || getBanMessage(prompt);
-      updateBotMessage(messageElement, banReply, {
-        sourcePrompt: prompt,
-        actions: true
-      });
-      replaceExisting
-        ? replaceConversationReply(prompt, banReply)
-        : appendConversation("assistant", banReply, prompt);
-      startBan();
-      return;
-    }
 
     updateBotMessage(messageElement, finalReply, {
       sourcePrompt: prompt,
@@ -1109,14 +964,12 @@ async function runReply(prompt, messageElement, replaceExisting = false, attachm
       activeReplyMessage = null;
       messageElement.classList.remove("streaming");
 
-      if (!updateBanState()) {
-        chatInput.disabled = false;
-        if (chatAttach) {
-          chatAttach.disabled = false;
-        }
-        setSubmitButtonMode("send");
-        chatInput.focus();
+      chatInput.disabled = false;
+      if (chatAttach) {
+        chatAttach.disabled = false;
       }
+      setSubmitButtonMode("send");
+      chatInput.focus();
     }
   }
 }
@@ -1162,9 +1015,7 @@ function loadConversationHistory() {
 }
 
 chatAttach?.addEventListener("click", () => {
-  if (!updateBanState()) {
-    chatUpload?.click();
-  }
+  chatUpload?.click();
 });
 
 chatUpload?.addEventListener("change", async () => {
@@ -1224,10 +1075,6 @@ chatForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  if (updateBanState()) {
-    return;
-  }
-
   const message = chatInput.value.trim();
   const attachments = pendingAttachments.slice();
 
@@ -1249,20 +1096,6 @@ chatForm.addEventListener("submit", async (event) => {
   addMessage(displayMessage, "user", "", attachments);
   appendConversation("user", historyMessage);
 
-  const clientTriggeredBan = trackAntiSteveWarning(historyMessage, { enforceBan: !CHAT_API_ENDPOINT });
-
-  if (!CHAT_API_ENDPOINT && clientTriggeredBan) {
-    const banReply = getBanMessage(historyMessage);
-    const replyMessage = addMessage("", "bot", "streaming");
-    updateBotMessage(replyMessage, banReply, {
-      sourcePrompt: historyMessage,
-      actions: true
-    });
-    replyMessage.classList.remove("streaming");
-    appendConversation("assistant", banReply, historyMessage);
-    return;
-  }
-
   await runReply(prompt, addMessage("", "bot", "streaming"), false, attachments);
 });
 
@@ -1279,9 +1112,12 @@ chatClear?.addEventListener("click", () => {
   renderAttachmentTray();
   updateEmptyState();
 
-  if (!updateBanState()) {
-    chatInput.focus();
+  chatInput.disabled = false;
+  if (chatAttach) {
+    chatAttach.disabled = false;
   }
+  setSubmitButtonMode("send");
+  chatInput.focus();
 });
 
 chatMessages.addEventListener("click", async (event) => {
@@ -1307,7 +1143,7 @@ chatMessages.addEventListener("click", async (event) => {
     }
   }
 
-  if (button.dataset.action === "regenerate" && !updateBanState()) {
+  if (button.dataset.action === "regenerate") {
     const prompt = message.dataset.sourcePrompt;
 
     if (prompt) {
@@ -1322,7 +1158,16 @@ chatInput.addEventListener("input", () => {
   updateEmptyState();
 });
 
+// Retire legacy restriction state without deleting conversation history.
+try {
+  localStorage.removeItem("stevegptAntiSteveWarnings");
+  localStorage.removeItem("stevegptBannedUntil");
+  localStorage.removeItem("stevegptBanSeen");
+} catch {
+  // Storage may be unavailable; restrictions are no longer enforced regardless.
+}
+
 loadConversationHistory();
-updateBanState();
+setSubmitButtonMode("send");
 updateEmptyState();
 resizeComposer();
