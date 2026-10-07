@@ -6,7 +6,7 @@
   --muted: #6e6e73;
   --line: rgba(255, 255, 255, 0.66);
   --glass: rgba(255, 255, 255, 0.72);
-  --chat-width: min(934px, calc(100vw - 96px));
+  --chat-width: min(800px, calc(100vw - 96px));
 }
 
 * {
