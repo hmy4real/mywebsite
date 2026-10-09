@@ -9,7 +9,7 @@ async function main() {
     { type: 'response.output_text.delta', delta: 'Hello ' },
     { type: 'response.output_text.annotation.added', annotation: { url: 'https://example.org/b', title: 'Second source' } },
     { type: 'response.output_text.delta', delta: 'world' },
-    { type: 'response.completed', response: { citations: ['https://example.com/a', 'javascript:alert(1)'] } }
+    { type: 'response.completed', response: { citations: ['https://example.com/a', 'javascript:alert(1)'], usage: { output_tokens_details: { reasoning_tokens: 0 } } } }
   ];
   const bytes = Buffer.from(events.map(e => `data: ${JSON.stringify(e)}\r\n\r\n`).join(''));
   let offset = 0;
@@ -20,6 +20,9 @@ async function main() {
   assert.equal(data.filter(e => e.sources).at(-1).sources.length, 2);
   assert.ok(data.find(e => e.status === 'Searching'));
   assert.equal(data.at(-1).searching, false);
+  assert.equal(data.at(-1).timing.reasoningTokens, 0);
+  assert.ok(data.at(-1).timing.timeToFirstTextMs >= 0);
+  assert.ok(data.at(-1).timing.serverTotalMs >= data.at(-1).timing.timeToFirstTextMs);
   assert.ok(!output.includes('javascript:'));
   console.log('PASS: fragmented streaming, live sources, deduplication, safe links, tool status');
 }

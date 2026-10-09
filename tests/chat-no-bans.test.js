@@ -28,7 +28,7 @@ async function main() {
   ]);
   let requests = 0;
   const context = vm.createContext({
-    console, AbortController, TextDecoder, setTimeout, clearTimeout,
+    console, AbortController, TextDecoder, setTimeout, clearTimeout, setInterval, clearInterval,
     ResizeObserver: class { observe() {} },
     requestAnimationFrame() {},
     getComputedStyle() { return { minHeight: "24", maxHeight: "168" }; },
@@ -53,6 +53,7 @@ async function main() {
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname, "../js/chatbot.js"), "utf8"), context);
   context.updateBotMessage = (message, reply) => { message.dataset.reply = reply; };
+  context.renderReplyStatus = () => {};
   assert.equal(storage.has("stevegptAntiSteveWarnings"), false);
   assert.equal(storage.has("stevegptBannedUntil"), false);
   assert.equal(storage.has("stevegptBanSeen"), false);

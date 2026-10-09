@@ -158,12 +158,18 @@ function getRecentMessages(messages, userMessage) {
 }
 
 async function handleAgentRequest(userMessage, chatMessages, attachments, response) {
+  const startedAt = Date.now();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 180000);
   const uploadedFileIds = [];
   const onClose = () => controller.abort();
   response.on?.("close", onClose);
   try {
+    // Only standalone greetings bypass reasoning; questions and attachments retain tools.
+    const quickGreeting = attachments.length === 0 && /^(?:hi|hello|hey|yo|hiya|good\s+(?:morning|afternoon|evening)|你好|您好|嗨)[\s!.?！。？]*$/i.test(userMessage.trim());
+    response.writeHead(200, { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-store, must-revalidate", Connection: "keep-alive", "X-Accel-Buffering": "no" });
+    response.flushHeaders?.();
+    response.write(`data: ${JSON.stringify({ status: attachments.length ? "Reading files" : quickGreeting ? "Preparing reply" : "Thinking", backendVersion: "greeting-fast-path-v1", requestMode: quickGreeting ? "greeting" : "agent" })}\n\n`);
     const content = [{ type: "input_text", text: [userMessage || "Analyze the attached files.", buildAttachmentTextContext(attachments)].filter(Boolean).join("\n\n") }];
     for (const attachment of attachments) {
       if (attachment.kind === "image") content.push({ type: "input_image", image_url: attachment.dataUrl });
@@ -184,20 +190,20 @@ async function handleAgentRequest(userMessage, chatMessages, attachments, respon
       headers: { Authorization: `Bearer ${process.env.XAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model, instructions: getSystemInstructions(), input, stream: true,
-        tools: mustSearch || wantsX ? [searchTool] : [{ type: "web_search", enable_image_understanding: true }, { type: "x_search", enable_image_understanding: true, enable_video_understanding: true }, { type: "code_interpreter" }],
+        tools: quickGreeting ? [] : mustSearch || wantsX ? [searchTool] : [{ type: "web_search", enable_image_understanding: true }, { type: "x_search", enable_image_understanding: true, enable_video_understanding: true }, { type: "code_interpreter" }],
+        reasoning: { effort: quickGreeting ? "none" : "low" },
         tool_choice: "auto",
         include: ["web_search_call.action.sources"],
         max_turns: 8,
-        max_output_tokens: /\b(detailed|thorough|essay|in.depth)\b|详细|长文/i.test(userMessage) ? 6000 : 2048
+        max_output_tokens: quickGreeting ? 128 : /\b(detailed|thorough|essay|in.depth)\b|详细|长文/i.test(userMessage) ? 6000 : 2048
       }),
       signal: controller.signal
     });
     if (!upstream.ok || !upstream.body) throw new Error(`xAI tools request failed (${upstream.status}).`);
-    response.writeHead(200, { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-store, must-revalidate", Connection: "keep-alive", "X-Accel-Buffering": "no" });
-    await forwardAgentStream(upstream, response);
+    await forwardAgentStream(upstream, response, startedAt);
   } catch (error) {
     if (!response.headersSent) response.status(502).json({ error: error.name === "AbortError" ? "The tool request timed out." : error.message });
-    else if (!response.destroyed) { response.write(`data: ${JSON.stringify({ error: "The response was interrupted. Please retry." })}\n\n`); response.end(); }
+    else if (!response.destroyed) { response.write(`data: ${JSON.stringify({ error: error.name === "AbortError" ? "The AI request timed out. Please retry." : error.message || "The response was interrupted. Please retry." })}\n\n`); response.end(); }
   } finally {
     clearTimeout(timer);
     response.off?.("close", onClose);
@@ -205,12 +211,14 @@ async function handleAgentRequest(userMessage, chatMessages, attachments, respon
   }
 }
 
-async function forwardAgentStream(upstream, response) {
+async function forwardAgentStream(upstream, response, startedAt = Date.now()) {
   const reader = upstream.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
   const sources = new Map();
   let lastSources = "";
+  let firstTextAt = null;
+  let reasoningTokens = null;
   function emit(data) { response.write(`data: ${JSON.stringify(data)}\n\n`); }
   function collect(value) {
     if (!value || typeof value !== "object") return;
@@ -229,7 +237,12 @@ async function forwardAgentStream(upstream, response) {
     if (!payload || payload === "[DONE]") return;
     const data = JSON.parse(payload);
     if (data.type === "error" || data.type === "response.failed") throw new Error("xAI tool execution failed.");
-    if (data.type === "response.output_text.delta") emit({ delta: data.delta || "" });
+    if (data.type === "response.output_text.delta") {
+      if (data.delta) firstTextAt ??= Date.now();
+      emit({ delta: data.delta || "" });
+    }
+    const reportedReasoningTokens = data.response?.usage?.output_tokens_details?.reasoning_tokens;
+    if (Number.isFinite(reportedReasoningTokens)) reasoningTokens = reportedReasoningTokens;
     collect(data);
     // Titles can become available after a URL is first reported.
     const snapshot = JSON.stringify([...sources.values()]);
@@ -250,7 +263,7 @@ async function forwardAgentStream(upstream, response) {
     if (done) break;
   }
   if (buffer.trim()) event(buffer);
-  emit({ status: "", searching: false });
+  emit({ status: "", searching: false, timing: { serverTotalMs: Date.now() - startedAt, timeToFirstTextMs: firstTextAt === null ? null : firstTextAt - startedAt, reasoningTokens } });
   response.write("data: [DONE]\n\n");
   response.end();
 }

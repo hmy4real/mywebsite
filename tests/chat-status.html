@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Reply Status Regression</title>
+<p id="status">Running</p>
+<iframe src="../ai/" title="Chat runtime" style="width:100%;height:650px;border:0"></iframe>
+<script>
+document.querySelector('iframe').addEventListener('load', async event => {
+  const runtime = event.target.contentWindow;
+  const originalFetch = runtime.fetch;
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const assert = (condition, error) => { if (!condition) throw new Error(error); };
+  const encoder = new TextEncoder();
+  let controller;
+  const emit = data => controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+  try {
+    runtime.document.getElementById('chatClear').click();
+    runtime.fetch = async (_url, options) => new Response(new ReadableStream({ start(stream) {
+      controller = stream;
+      options.signal.addEventListener('abort', () => stream.error(new DOMException('Stopped', 'AbortError')), { once: true });
+    } }), { headers: { 'Content-Type': 'text/event-stream' } });
+    const message = runtime.addMessage('', 'bot');
+    const pending = runtime.runReply('hi', message);
+    assert(message.firstElementChild.matches('.chat-response-status'), 'Status must precede the reply');
+    assert(message.firstElementChild.textContent.includes('Thinking'), 'Missing immediate thinking status');
+    await wait(1100);
+    assert(message.firstElementChild.textContent.includes('1s'), 'Elapsed timer did not update');
+    emit({ status: 'Searching', searching: true });
+    emit({ sources: [{ url: 'https://example.com', title: 'Example' }] });
+    await wait(20);
+    assert(message.firstElementChild.textContent.includes('Searching'), 'Tool status did not update');
+    assert(message.querySelectorAll('.chat-response-status').length === 1, 'Status should be a single integrated control');
+    const sourceStatus = message.querySelector('.chat-sources summary.chat-response-status');
+    assert(sourceStatus.textContent.includes('Searching'), 'Status should become the sources control');
+    assert(sourceStatus.textContent.endsWith(' · 1 source'), 'Source count should follow status with a dot');
+    assert(runtime.getComputedStyle(sourceStatus).display === 'inline-flex', 'Native marker should be replaced by the trailing chevron');
+    assert(runtime.getComputedStyle(sourceStatus, '::after').maskImage.includes('chevron-right.svg'), 'Missing trailing chevron');
+    sourceStatus.click();
+    await wait(20);
+    assert(sourceStatus.parentElement.open, 'Clicking the status should open sources');
+    emit({ delta: 'Hello.' });
+    await wait(20);
+    assert(message.firstElementChild.textContent.includes('Writing'), 'Missing writing status');
+    assert(message.querySelector('.chat-bubble').textContent.includes('Hello.'), 'Reply lost');
+    assert(message.querySelector('summary') === sourceStatus && sourceStatus.parentElement.open, 'Streaming disrupted the open status disclosure');
+    sourceStatus.click();
+    await wait(20);
+    emit({ status: '', searching: false });
+    controller.close();
+    await pending;
+    assert(message.firstElementChild.textContent.includes('Responded in'), 'Missing completion time');
+    assert(message.querySelector('.chat-response-status').textContent.endsWith(' · 1 source'), 'Completed header should include one source count');
+    assert(message.querySelector('.chat-sources details') && !message.querySelector('details').open, 'Sources should remain collapsed');
+    assert(message.children[0].matches('.chat-sources') && message.children[1].matches('.chat-bubble'), 'Expected one integrated status/source header, then reply');
+    const saved = JSON.parse(runtime.localStorage.getItem('stevegptChatHistory'));
+    assert(saved.at(-1).responseTimeMs >= 1100, 'Completion time not persisted');
+    runtime.loadConversationHistory();
+    assert(runtime.document.querySelector('.chat-response-status').textContent.includes('Responded in'), 'History lost status');
+    runtime.appendConversation('user', 'Next message');
+    assert(JSON.parse(runtime.localStorage.getItem('stevegptChatHistory'))[0].responseTimeMs >= 1100, 'A new message discarded restored timing');
+
+    const stopped = runtime.addMessage('', 'bot');
+    const aborted = runtime.runReply('hi', stopped);
+    await wait(20);
+    runtime.stopActiveResponse();
+    await aborted;
+    assert(!stopped.isConnected, 'An empty stopped request must not become a status-only reply');
+
+    const partial = runtime.addMessage('', 'bot');
+    const interrupted = runtime.runReply('hi', partial);
+    await wait(20);
+    emit({ delta: 'Partial reply' });
+    await wait(20);
+    runtime.stopActiveResponse();
+    await interrupted;
+    assert(partial.firstElementChild.textContent === 'Stopped', 'Partial stop status is wrong');
+    await wait(1100);
+    assert(partial.firstElementChild.textContent === 'Stopped', 'Timer survived cancellation');
+
+    runtime.fetch = async () => { throw new Error('Test connection failure'); };
+    await runtime.runReply('hi', partial, true);
+    assert(partial.firstElementChild.textContent === 'Request failed', 'Failure status is wrong');
+    assert(!partial.querySelector('.chat-sources'), 'Regeneration retained old sources');
+    assert(!runtime.document.getElementById('chatInput').disabled, 'Failure left input disabled');
+    document.querySelector('#status').textContent = 'PASS: immediate status, timer, tool updates, source count, persistence, cancellation, regeneration, failure';
+  } catch (error) { document.querySelector('#status').textContent = 'FAIL: ' + error.message; }
+  finally { runtime.fetch = originalFetch; }
+});
+</script>
+</html>

@@ -46,4 +46,7 @@ http.createServer(async (req, res) => {
       else res.status(404).end();
     } else res.end();
   }
-}).listen(Number(process.env.PORT || 8767), '127.0.0.1', () => console.log('Local SteveGPT: http://127.0.0.1:' + (process.env.PORT || 8767) + '/ai/'));
+}).listen(Number(process.env.PORT || 8767), '127.0.0.1', () => {
+  console.log('Local SteveGPT: http://127.0.0.1:' + (process.env.PORT || 8767) + '/ai/');
+  console.log(process.env.XAI_API_KEY ? 'Backend: local api/chat.js' : 'Backend: deployed API proxy; local api/chat.js changes do not run until deployed or a local XAI_API_KEY is configured.');
+});

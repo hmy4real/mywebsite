@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Streaming Scroll Regression</title>
+<p id="status">Running</p>
+<iframe src="../ai/" title="Chat runtime" style="width:100%;height:650px;border:0"></iframe>
+<script>
+document.querySelector('iframe').addEventListener('load', async event => {
+  const runtime = event.target.contentWindow;
+  const shell = runtime.document.querySelector('.chat-shell');
+  const wait = () => new Promise(resolve => setTimeout(resolve, 80));
+  const assert = (condition, error) => { if (!condition) throw new Error(error); };
+  const nearBottom = () => shell.scrollHeight - shell.clientHeight - shell.scrollTop < 4;
+  try {
+    runtime.document.getElementById('chatClear').click();
+    const message = runtime.addMessage('', 'bot');
+    let reply = Array.from({ length: 60 }, (_, i) => `Paragraph ${i}: A long answer with enough content to scroll.`).join('\n\n');
+    runtime.updateBotMessage(message, reply);
+    await wait();
+    assert(nearBottom(), 'Initial streaming should follow the bottom');
+
+    shell.scrollTop = 120;
+    shell.dispatchEvent(new Event('scroll'));
+    const readingPosition = shell.scrollTop;
+    reply += '\n\nNew streaming paragraph.'.repeat(10);
+    runtime.updateBotMessage(message, reply);
+    runtime.renderReplySources(message, { sources: [{ url: 'https://example.com', title: 'Example' }] });
+    await wait();
+    assert(Math.abs(shell.scrollTop - readingPosition) < 50, 'Streaming pulled the reader to the bottom');
+    assert(!nearBottom(), 'Scrolled-up reading position was lost');
+    const sourceDisclosure = message.querySelector('details');
+    sourceDisclosure.open = true;
+    await wait();
+    runtime.updateBotMessage(message, reply + '\n\nMore content.');
+    await wait();
+    assert(message.querySelector('details') === sourceDisclosure && sourceDisclosure.open, 'Streaming disrupted the open sources');
+    assert(!nearBottom(), 'Opening sources resumed forced scrolling');
+
+    shell.scrollTop = shell.scrollHeight;
+    shell.dispatchEvent(new Event('scroll'));
+    runtime.updateBotMessage(message, reply + '\n\nMore content.'.repeat(10));
+    await wait();
+    assert(nearBottom(), 'Returning to the bottom should resume following');
+
+    shell.dispatchEvent(new WheelEvent('wheel', { deltaY: -24 }));
+    shell.scrollTop -= 24;
+    shell.dispatchEvent(new Event('scroll'));
+    const slightScrollPosition = shell.scrollTop;
+    runtime.updateBotMessage(message, reply + '\n\nMore content.'.repeat(20));
+    await wait();
+    assert(Math.abs(shell.scrollTop - slightScrollPosition) < 4, 'A small upward scroll was overridden');
+
+    shell.scrollTop = shell.scrollHeight;
+    shell.dispatchEvent(new Event('scroll'));
+
+    runtime.updateBotMessage(message, reply + '\n\nQueued content.'.repeat(20));
+    shell.dispatchEvent(new WheelEvent('wheel', { deltaY: -100 }));
+    shell.scrollTop -= 160;
+    shell.dispatchEvent(new Event('scroll'));
+    const interruptedPosition = shell.scrollTop;
+    await wait();
+    assert(Math.abs(shell.scrollTop - interruptedPosition) < 4, 'A queued scroll overrode an upward gesture');
+
+    runtime.addMessage('A new message', 'user');
+    await wait();
+    assert(nearBottom(), 'Sending a new message should follow the new turn');
+    const originalFetch = runtime.fetch;
+    let stream;
+    runtime.fetch = async () => new Response(new ReadableStream({ start(controller) { stream = controller; } }), {
+      headers: { 'Content-Type': 'text/event-stream' }
+    });
+    const answer = runtime.addMessage('', 'bot');
+    const pending = runtime.runReply('A new message', answer);
+    const encoder = new TextEncoder();
+    stream.enqueue(encoder.encode(`data: ${JSON.stringify({ delta: reply })}\n\n`));
+    await wait();
+    assert(nearBottom(), 'A real streamed response should follow the bottom');
+    shell.scrollTop = 100;
+    shell.dispatchEvent(new Event('scroll'));
+    stream.enqueue(encoder.encode(`data: ${JSON.stringify({ delta: '\n\nThe final paragraph.' })}\n\n`));
+    stream.close();
+    await pending;
+    await wait();
+    runtime.fetch = originalFetch;
+    assert(Math.abs(shell.scrollTop - 100) < 4, 'Completion pulled the reader down');
+    assert(runtime.document.activeElement !== runtime.document.getElementById('chatInput'), 'Completion stole focus from a scrolled-up reader');
+    document.querySelector('#status').textContent = 'PASS: bottom following, scroll-up reading, source disclosure, resume, queued-scroll cancellation, new turn';
+  } catch (error) { document.querySelector('#status').textContent = 'FAIL: ' + error.message; }
+});
+</script>
+</html>
