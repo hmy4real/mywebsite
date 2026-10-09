@@ -73,7 +73,9 @@ async function main() {
     writeHead() {}, write(frame) { greetingFrames.push(frame); }, end() {}
   });
   assert.equal(requests.at(-1).body.reasoning.effort, "none");
-  assert.deepEqual(requests.at(-1).body.tools, []);
+  for (const field of ["tools", "tool_choice", "include", "max_turns"]) {
+    assert.equal(field in requests.at(-1).body, false, "Tool-free greetings must omit tool options");
+  }
   assert.equal(requests.at(-1).body.max_output_tokens, 128);
   assert.equal(requests.at(-1).body.input[0].content, "Earlier context", "The greeting path should not discard history");
   context.fetch = fetch;
@@ -86,7 +88,7 @@ async function main() {
   assert.equal(requests.at(-1).body.reasoning.effort, "low", "Attachments must not use the greeting shortcut");
   const failureFrames = [];
   let ended = false;
-  context.fetch = async () => ({ ok: false, status: 429 });
+  context.fetch = async () => ({ ok: false, status: 429, json: async () => ({ error: { message: "Rate limit reached" } }) });
   const failedResponse = {
     headersSent: false,
     writeHead() { this.headersSent = true; },
@@ -95,7 +97,7 @@ async function main() {
   };
   await context.handleAgentRequest("hi", [{ role: "user", content: "hi" }], [], failedResponse);
   assert.ok(ended, "Upstream errors must close the early-opened stream");
-  assert.ok(failureFrames.some(frame => frame.includes('"error":"xAI tools request failed (429)."')), "Early streaming must preserve useful API error diagnostics");
+  assert.ok(failureFrames.some(frame => frame.includes('"error":"xAI request failed (429): Rate limit reached"')), "Early streaming must preserve useful API error diagnostics");
   console.log("PASS: formatting instructions and Markdown/LaTeX attachment payloads");
 }
 

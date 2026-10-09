@@ -169,7 +169,7 @@ async function handleAgentRequest(userMessage, chatMessages, attachments, respon
     const quickGreeting = attachments.length === 0 && /^(?:hi|hello|hey|yo|hiya|good\s+(?:morning|afternoon|evening)|你好|您好|嗨)[\s!.?！。？]*$/i.test(userMessage.trim());
     response.writeHead(200, { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-store, must-revalidate", Connection: "keep-alive", "X-Accel-Buffering": "no" });
     response.flushHeaders?.();
-    response.write(`data: ${JSON.stringify({ status: attachments.length ? "Reading files" : quickGreeting ? "Preparing reply" : "Thinking", backendVersion: "greeting-fast-path-v1", requestMode: quickGreeting ? "greeting" : "agent" })}\n\n`);
+    response.write(`data: ${JSON.stringify({ status: attachments.length ? "Reading files" : quickGreeting ? "Preparing reply" : "Thinking", backendVersion: "greeting-fast-path-v2", requestMode: quickGreeting ? "greeting" : "agent" })}\n\n`);
     const content = [{ type: "input_text", text: [userMessage || "Analyze the attached files.", buildAttachmentTextContext(attachments)].filter(Boolean).join("\n\n") }];
     for (const attachment of attachments) {
       if (attachment.kind === "image") content.push({ type: "input_image", image_url: attachment.dataUrl });
@@ -190,16 +190,22 @@ async function handleAgentRequest(userMessage, chatMessages, attachments, respon
       headers: { Authorization: `Bearer ${process.env.XAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model, instructions: getSystemInstructions(), input, stream: true,
-        tools: quickGreeting ? [] : mustSearch || wantsX ? [searchTool] : [{ type: "web_search", enable_image_understanding: true }, { type: "x_search", enable_image_understanding: true, enable_video_understanding: true }, { type: "code_interpreter" }],
         reasoning: { effort: quickGreeting ? "none" : "low" },
-        tool_choice: "auto",
-        include: ["web_search_call.action.sources"],
-        max_turns: 8,
+        ...(!quickGreeting ? {
+          tools: mustSearch || wantsX ? [searchTool] : [{ type: "web_search", enable_image_understanding: true }, { type: "x_search", enable_image_understanding: true, enable_video_understanding: true }, { type: "code_interpreter" }],
+          tool_choice: "auto",
+          include: ["web_search_call.action.sources"],
+          max_turns: 8
+        } : {}),
         max_output_tokens: quickGreeting ? 128 : /\b(detailed|thorough|essay|in.depth)\b|详细|长文/i.test(userMessage) ? 6000 : 2048
       }),
       signal: controller.signal
     });
-    if (!upstream.ok || !upstream.body) throw new Error(`xAI tools request failed (${upstream.status}).`);
+    if (!upstream.ok || !upstream.body) {
+      const failure = await upstream.json().catch(() => ({}));
+      const detail = failure.error?.message || (typeof failure.error === "string" ? failure.error : "");
+      throw new Error(`xAI request failed (${upstream.status})${detail ? `: ${detail.slice(0, 400)}` : "."}`);
+    }
     await forwardAgentStream(upstream, response, startedAt);
   } catch (error) {
     if (!response.headersSent) response.status(502).json({ error: error.name === "AbortError" ? "The tool request timed out." : error.message });
