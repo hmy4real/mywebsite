@@ -80,7 +80,7 @@ async function main() {
   assert.equal(requests.at(-1).body.max_output_tokens, 128);
   assert.equal(requests.at(-1).body.input[0].content, "Earlier context", "The greeting path should not discard history");
   context.fetch = fetch;
-  for (const prompt of ["hi, explain induction", "Calculate 250 * 324", "Who are you?", "Write a Python sorting function", "Write quicksort with Python", "Use code blocks for the examples", "Explain binary search", "Explain electric current", "Write a poem about today", "Translate this tweet: latest news today"]) {
+  for (const prompt of ["hi, explain induction", "Calculate 250 * 324", "Who are you?", "Write a Python sorting function", "Write quicksort with Python", "Use code blocks for the examples", "Explain binary search", "Explain electric current", "Write a poem about today", "Translate this tweet: latest news today", "Thanks for your help today", "How are you today?", "My birthday is today", "Don't search the web. Explain induction", "Do not use tools. Calculate 250 * 324 with Python"]) {
     await context.handleAgentRequest(prompt, [{ role: "user", content: prompt }], [], { writeHead() {}, write() {}, end() {} });
     assert.equal(requests.at(-1).body.reasoning.effort, "none");
     assert.equal(requests.at(-1).body.tools, undefined, "Ordinary requests must not enable tools");
