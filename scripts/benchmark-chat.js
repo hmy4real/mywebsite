@@ -4,11 +4,12 @@ async function main() {
   const endpoint = process.argv[2] || 'http://127.0.0.1:8767/api/chat';
   const message = process.argv[3] || 'hello';
   const samples = Math.min(5, Math.max(1, Number(process.argv[4]) || 3));
+  const thinking = process.argv[5] === 'thinking';
   for (let sample = 1; sample <= samples; sample += 1) {
     const start = performance.now();
     const response = await fetch(endpoint, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, messages: [], attachments: [] }),
+      body: JSON.stringify({ message, messages: [], attachments: [], thinking }),
       signal: AbortSignal.timeout(60000)
     });
     const headersMs = Math.round(performance.now() - start);

@@ -49,7 +49,8 @@ async function main() {
     assert.equal(request.body.input[0].content.length, 1);
     assert.ok(request.body.input[0].content[0].text.includes(text));
     assert.equal(request.body.instructions, instructions);
-    assert.deepEqual(request.body.tools.map(tool => tool.type), ["web_search", "x_search", "code_interpreter"]);
+    assert.equal(request.body.tools, undefined, "Reading supplied text should not enable unrelated tools");
+    assert.equal(request.body.reasoning.effort, "none");
     assert.equal(request.body.stream, true);
   }
   assert.equal(requests.length, 4, "Text files should not trigger extra binary uploads");
@@ -60,7 +61,7 @@ async function main() {
   await context.handleAgentRequest("Search X posts about space", [{ role: "user", content: "Search X posts about space" }], [], { writeHead() {}, write() {}, end() {} });
   assert.deepEqual(requests.at(-1).body.tools.map(tool => tool.type), ["x_search"]);
   await context.handleAgentRequest("whos steve han", [{ role: "user", content: "whos steve han" }], [], { writeHead() {}, write() {}, end() {} });
-  assert.equal(requests.at(-1).body.tool_choice, "auto");
+  assert.equal(requests.at(-1).body.tools, undefined, "Creator memory does not need external tools");
   assert.equal(requests.at(-1).body.max_output_tokens, 2048);
   assert.ok(!requests.at(-1).body.input.at(-1).content[0].text.includes("Research instruction:"));
   const greetingFrames = [];
@@ -79,13 +80,32 @@ async function main() {
   assert.equal(requests.at(-1).body.max_output_tokens, 128);
   assert.equal(requests.at(-1).body.input[0].content, "Earlier context", "The greeting path should not discard history");
   context.fetch = fetch;
-  for (const prompt of ["hi, explain induction", "hello who is Ada Lovelace?", "Calculate 250 * 324"]) {
+  for (const prompt of ["hi, explain induction", "Calculate 250 * 324", "Who are you?", "Write a Python sorting function", "Write quicksort with Python", "Use code blocks for the examples", "Explain binary search", "Explain electric current", "Write a poem about today", "Translate this tweet: latest news today"]) {
     await context.handleAgentRequest(prompt, [{ role: "user", content: prompt }], [], { writeHead() {}, write() {}, end() {} });
-    assert.equal(requests.at(-1).body.reasoning.effort, "low");
-    assert.ok(requests.at(-1).body.tools.length > 0, "Actual questions must retain tools");
+    assert.equal(requests.at(-1).body.reasoning.effort, "none");
+    assert.equal(requests.at(-1).body.tools, undefined, "Ordinary requests must not enable tools");
+  }
+  for (const thinking of [true, false]) {
+    await context.handleAgentRequest("Prove that there are infinitely many primes", [{ role: "user", content: "Prove that there are infinitely many primes" }], [], { writeHead() {}, write() {}, end() {} }, thinking);
+    assert.equal(requests.at(-1).body.reasoning.effort, thinking ? "medium" : "none");
+    assert.equal(requests.at(-1).body.tools, undefined, "Thinking must not enable unrelated tools");
   }
   await context.handleAgentRequest("hi", [{ role: "user", content: "hi" }], [{ kind: "text", name: "notes.txt", text: "Analyze this" }], { writeHead() {}, write() {}, end() {} });
-  assert.equal(requests.at(-1).body.reasoning.effort, "low", "Attachments must not use the greeting shortcut");
+  assert.equal(requests.at(-1).body.reasoning.effort, "none", "Reading text does not require extra reasoning");
+  await context.handleAgentRequest("hello who is Ada Lovelace?", [{ role: "user", content: "hello who is Ada Lovelace?" }], [], { writeHead() {}, write() {}, end() {} });
+  assert.deepEqual(requests.at(-1).body.tools.map(tool => tool.type), ["web_search"]);
+  await context.handleAgentRequest("Calculate 250 * 324 with Python", [{ role: "user", content: "Calculate 250 * 324 with Python" }], [], { writeHead() {}, write() {}, end() {} }, true);
+  assert.deepEqual(requests.at(-1).body.tools.map(tool => tool.type), ["code_interpreter"]);
+  assert.equal(requests.at(-1).body.reasoning.effort, "medium");
+  await context.handleAgentRequest("hello", [{ role: "user", content: "hello" }], [], { writeHead() {}, write() {}, end() {} }, true);
+  assert.equal(requests.at(-1).body.reasoning.effort, "none", "Greetings still do not need thinking when the toggle is on");
+  const documentPolicy = context.getRequestPolicy("Summarize the attached PDF", [{ kind: "file" }], false);
+  assert.equal(documentPolicy.effort, "low");
+  assert.equal(documentPolicy.tools.length, 0, "PDF reading must not enable web or code tools");
+  for (const value of [true, false, "true", "false"]) {
+    await context.module.exports({ method: "POST", body: { message: "Explain induction", thinking: value } }, { setHeader() {}, writeHead() {}, write() {}, end() {} });
+    assert.equal(requests.at(-1).body.reasoning.effort, value === true ? "medium" : "none", "The HTTP handler must validate and forward the thinking flag");
+  }
   const failureFrames = [];
   let ended = false;
   context.fetch = async () => ({ ok: false, status: 429, json: async () => ({ error: { message: "Rate limit reached" } }) });

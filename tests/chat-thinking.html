@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Thinking Mode Regression</title>
+<p id="status">Running</p>
+<iframe src="../ai/" title="Chat runtime" style="width:100%;height:650px;border:0"></iframe>
+<script>
+document.querySelector('iframe').addEventListener('load', async event => {
+  const runtime = event.target.contentWindow;
+  const button = runtime.document.getElementById('chatThink');
+  const assert = (condition, error) => { if (!condition) throw new Error(error); };
+  const originalFetch = runtime.fetch;
+  const requests = [];
+  try {
+    runtime.document.getElementById('chatClear').click();
+    if (button.getAttribute('aria-pressed') === 'true') button.click();
+    assert(button.getAttribute('aria-pressed') === 'false', 'Thinking must be off by default');
+    const send = runtime.document.getElementById('chatSubmit').getBoundingClientRect();
+    const think = button.getBoundingClientRect();
+    assert(think.right < send.left && Math.abs(think.height - send.height) < 1, 'Thinking should fit immediately left of Send');
+    runtime.fetch = async (_url, options) => {
+      requests.push(JSON.parse(options.body));
+      assert(button.disabled, 'Mode should be locked while its request runs');
+      return { ok: true, body: null, json: async () => ({ reply: 'Test answer' }) };
+    };
+    await runtime.runReply('Explain induction', runtime.addMessage('', 'bot'));
+    assert(requests.at(-1).thinking === false, 'Off mode was not sent to backend');
+    button.click();
+    assert(button.getAttribute('aria-pressed') === 'true', 'Thinking did not turn on');
+    assert(runtime.localStorage.getItem('stevegptThinkingEnabled') === 'true', 'Mode preference was not saved');
+    await runtime.runReply('Explain induction', runtime.addMessage('', 'bot'));
+    assert(requests.at(-1).thinking === true, 'On mode was not sent to backend');
+    assert(!button.disabled, 'Mode did not unlock when complete');
+    button.click();
+    assert(button.getAttribute('aria-pressed') === 'false', 'Thinking did not turn off');
+    document.querySelector('#status').textContent = 'PASS: placement, default, toggle, preference, request payload, disabled state';
+  } catch (error) { document.querySelector('#status').textContent = 'FAIL: ' + error.message; }
+  finally { runtime.fetch = originalFetch; }
+});
+</script>
+</html>

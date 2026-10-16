@@ -8,7 +8,7 @@
 document.querySelector('iframe').addEventListener('load', async event => {
   const runtime = event.target.contentWindow;
   const shell = runtime.document.querySelector('.chat-shell');
-  const wait = () => new Promise(resolve => setTimeout(resolve, 80));
+  const wait = () => new Promise(resolve => runtime.requestAnimationFrame(() => runtime.requestAnimationFrame(() => setTimeout(resolve, 30))));
   const assert = (condition, error) => { if (!condition) throw new Error(error); };
   const nearBottom = () => shell.scrollHeight - shell.clientHeight - shell.scrollTop < 4;
   try {

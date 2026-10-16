@@ -15,6 +15,7 @@ document.querySelector('iframe').addEventListener('load', async event => {
   const emit = data => controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
   try {
     runtime.document.getElementById('chatClear').click();
+    if (runtime.document.getElementById('chatThink').getAttribute('aria-pressed') === 'true') runtime.document.getElementById('chatThink').click();
     runtime.fetch = async (_url, options) => new Response(new ReadableStream({ start(stream) {
       controller = stream;
       options.signal.addEventListener('abort', () => stream.error(new DOMException('Stopped', 'AbortError')), { once: true });
@@ -22,9 +23,10 @@ document.querySelector('iframe').addEventListener('load', async event => {
     const message = runtime.addMessage('', 'bot');
     const pending = runtime.runReply('hi', message);
     assert(message.firstElementChild.matches('.chat-response-status'), 'Status must precede the reply');
-    assert(message.firstElementChild.textContent.includes('Thinking'), 'Missing immediate thinking status');
+    assert(message.firstElementChild.textContent.includes('Preparing reply'), 'Fast mode should not pretend to be thinking');
     await wait(1100);
-    assert(message.firstElementChild.textContent.includes('1s'), 'Elapsed timer did not update');
+    for (let attempt = 0; attempt < 40 && !/· [1-9]\d*s/.test(message.firstElementChild.textContent); attempt += 1) await wait(50);
+    assert(/· [1-9]\d*s/.test(message.firstElementChild.textContent), 'Elapsed timer did not update');
     emit({ status: 'Searching', searching: true });
     emit({ sources: [{ url: 'https://example.com', title: 'Example' }] });
     await wait(20);
